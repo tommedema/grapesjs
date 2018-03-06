@@ -53,7 +53,9 @@ module.exports = require('backbone').View.extend({
   },
 
   getWrapper() {
-    return this.$el.contents().find('body > div');
+    return this.$el
+      .contents()
+      .find(this.em.config.fromDocument ? 'body' : 'body > div');
   },
 
   render() {
