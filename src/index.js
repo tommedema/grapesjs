@@ -46,9 +46,8 @@ module.exports = (() => {
      * })
      */
     init(config = {}) {
-      const els = config.fromDocument
-        ? window.document.documentElement
-        : config.container;
+      const els = config.fromDocument ? window.document.body : config.container;
+
       if (!els) throw new Error("'container' is required");
       config = { ...defaultConfig, ...config };
       config.el = isElement(els) ? els : document.querySelector(els);

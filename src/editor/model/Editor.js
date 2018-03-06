@@ -53,9 +53,7 @@ module.exports = Backbone.Model.extend({
     this.set('modules', []);
     this.set('toLoad', []);
 
-    if (c.el && c.fromDocument) {
-      this.config.components = c.el.outerHTML;
-    } else if (c.el && c.fromElement) {
+    if (c.el && (c.fromElement || c.fromDocument)) {
       this.config.components = c.el.innerHTML;
     }
 
