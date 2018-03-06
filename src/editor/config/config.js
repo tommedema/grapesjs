@@ -11,6 +11,11 @@ module.exports = {
   // If true, will fetch HTML and CSS from selected container
   fromElement: 0,
 
+  // If true, will fetch the entire document (including doctype, html, head, and body tags)
+  // and inject it into the canvas iframe. This improves compatibility with complex templates
+  // that rely on doctypes and above-body classes to render properly.
+  fromDocument: 0,
+
   // Show an alert before unload the page with unsaved changes
   noticeOnUnload: true,
 

@@ -53,7 +53,11 @@ module.exports = Backbone.Model.extend({
     this.set('modules', []);
     this.set('toLoad', []);
 
-    if (c.el && c.fromElement) this.config.components = c.el.innerHTML;
+    if (c.el && c.fromDocument) {
+      this.config.components = c.el.outerHTML;
+    } else if (c.el && c.fromElement) {
+      this.config.components = c.el.innerHTML;
+    }
 
     // Load modules
     deps.forEach(name => this.loadModule(name));
@@ -346,7 +350,7 @@ module.exports = Backbone.Model.extend({
       for (var el in obj) store[el] = obj[el];
     });
 
-    sm.store(store, (res) => {
+    sm.store(store, res => {
       clb && clb(res);
       this.set('changesCount', 0);
       this.trigger('storage:store', store);
