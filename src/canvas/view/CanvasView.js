@@ -4,7 +4,13 @@ const $ = Backbone.$;
 
 module.exports = Backbone.View.extend({
   initialize(o) {
-    _.bindAll(this, 'renderIframeDocument', 'onFrameScroll', 'clearOff');
+    _.bindAll(
+      this,
+      'cloneIframeDocument',
+      'renderIframeDocument',
+      'onFrameScroll',
+      'clearOff'
+    );
     on(window, 'scroll resize', this.clearOff);
     this.config = o.config || {};
     this.em = this.config.em || {};
@@ -75,37 +81,62 @@ module.exports = Backbone.View.extend({
   },
 
   /**
+   * If fromDocument is true, clone the entire document's structure
+   * except for the already parsed DOM components.
+   * This ensures that doctypes and classes in higher level components
+   * like html and body tags are respected.
+   * @private
+   */
+  cloneIframeDocument() {
+    const mdoc = window.document;
+    const fdoc = this.frame.el.contentDocument;
+    const regexp = /(<body[^>]*>)((?:.|[\n\r])*)(<\/body>)/gim;
+    const template = mdoc.documentElement.outerHTML.replace(regexp, '$1$3');
+
+    fdoc.open();
+    fdoc.write('<!DOCTYPE html>');
+    fdoc.write(template);
+    fdoc.close();
+
+    // Setting frame.onload does not function after writing to the document
+    // Readystatechange is called as expected
+    if (fdoc.readyState === 'complete' || fdoc.readyState === 'interactive') {
+      this.renderIframeDocument();
+    } else {
+      $(fdoc).on('readystatechange', this.renderIframeDocument);
+    }
+  },
+
+  /**
    * Render inside frame's body
    * @private
    */
   renderIframeDocument() {
-    var em = this.config.em;
-    var wrap = this.model.get('frame').get('wrapper');
+    const fdoc = this.frame.el.contentDocument;
+    if (fdoc.readyState !== 'interactive' && fdoc.readyState !== 'complete')
+      return;
+    $(fdoc).off('readystatechange', this.renderIframeDocument);
 
+    const wrap = this.model.get('frame').get('wrapper');
     if (wrap) {
-      var ppfx = this.ppfx;
-      var body = $(this.frame.el.contentWindow.document.body);
-      var cssc = em.get('CssComposer');
-      var conf = em.get('Config');
-      var confCanvas = this.config;
-      var protCss = conf.protectedCss;
-      var externalStyles = '';
+      const mdoc = window.document;
 
-      // If the entire document becomes the canvas
-      // the document structure should be replicated in the iframe
-      // Except for the body contents which are parsed by grapes
-      // The doctype is already inherited from the document at this point
-      // if (em.config.fromDocument) {
-      //     body.replaceWith(wrap.render());
-      // }
+      const body = $(fdoc.body);
+      const ppfx = this.ppfx;
+      const em = this.config.em;
+      const cssc = em.get('CssComposer');
+      const conf = em.get('Config');
+      const confCanvas = this.config;
+      const protCss = conf.protectedCss;
 
+      let externalStyles = '';
       confCanvas.styles.forEach(style => {
         externalStyles += `<link rel="stylesheet" href="${style}"/>`;
       });
 
       const colorWarn = '#ffca6f';
 
-      let baseCss = `
+      const baseCss = `
         * {
           box-sizing: border-box;
         }
@@ -131,7 +162,7 @@ module.exports = Backbone.View.extend({
       // CKEditor's issue
 
       // I need all this styles to make the editor work properly
-      var frameCss = `
+      const frameCss = `
         ${baseCss}
 
         .${ppfx}dashed *[data-highlightable] {
@@ -208,15 +239,12 @@ module.exports = Backbone.View.extend({
 
       // When the iframe is focused the event dispatcher is not the same so
       // I need to delegate all events to the parent document
-      const doc = document;
-      const fdoc = this.frame.el.contentDocument;
-
       // Unfortunately just creating `KeyboardEvent(e.type, e)` is not enough,
       // the keyCode/which will be always `0`. Even if it's an old/deprecated
       // property keymaster (and many others) still use it... using `defineProperty`
       // hack seems the only way
       const createCustomEvent = (e, cls) => {
-        var oEvent = new window[cls](e.type, e);
+        const oEvent = new window[cls](e.type, e);
         oEvent.keyCodeVal = e.keyCode;
         ['keyCode', 'which'].forEach(prop => {
           Object.defineProperty(oEvent, prop, {
@@ -234,7 +262,7 @@ module.exports = Backbone.View.extend({
       ].forEach(obj =>
         obj.event.split(' ').forEach(event => {
           fdoc.addEventListener(event, e =>
-            doc.dispatchEvent(createCustomEvent(e, obj.class))
+            mdoc.dispatchEvent(createCustomEvent(e, obj.class))
           );
         })
       );
@@ -374,7 +402,11 @@ module.exports = Backbone.View.extend({
       this.$el.append(this.frame.render().el);
       var frame = this.frame;
       if (this.config.scripts.length === 0) {
-        frame.el.onload = this.renderIframeDocument;
+        if (this.em.config.fromDocument) {
+          frame.el.onload = this.cloneIframeDocument;
+        } else {
+          frame.el.onload = this.renderIframeDocument;
+        }
       } else {
         this.renderScripts(); // will call renderIframeDocument later
       }
