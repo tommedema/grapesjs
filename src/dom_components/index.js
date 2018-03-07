@@ -223,11 +223,11 @@ module.exports = () => {
       component.set({ attributes: { id: 'wrapper' } }); // FIXME: avoid this if `fromDocument` is true
 
       // copy the document body's properties if `fromDocument` is true
-      if (em.config.fromDocument) {
-        const attrs = [...em.config.el.attributes].reduce(
-          (a, e) => (a[e.name] = e.value) && a,
-          {}
-        );
+      if (em && em.config.fromDocument) {
+        const attrs = [...em.config.el.attributes].reduce((a, e) => {
+          a[e.name] = e.value;
+          return a;
+        }, {});
         component.addAttributes(attrs);
       }
 
