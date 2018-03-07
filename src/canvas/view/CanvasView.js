@@ -4,7 +4,7 @@ const $ = Backbone.$;
 
 module.exports = Backbone.View.extend({
   initialize(o) {
-    _.bindAll(this, 'renderBody', 'onFrameScroll', 'clearOff');
+    _.bindAll(this, 'renderIframeDocument', 'onFrameScroll', 'clearOff');
     on(window, 'scroll resize', this.clearOff);
     this.config = o.config || {};
     this.em = this.config.em || {};
@@ -48,7 +48,7 @@ module.exports = Backbone.View.extend({
   },
 
   /**
-   * Insert scripts into head, it will call renderBody after all scripts loaded or failed
+   * Insert scripts into head, it will call renderIframeDocument after all scripts loaded or failed
    * @private
    */
   renderScripts() {
@@ -67,7 +67,7 @@ module.exports = Backbone.View.extend({
           script.onerror = script.onload = appendScript.bind(null, scripts);
           frame.el.contentDocument.head.appendChild(script);
         } else {
-          that.renderBody();
+          that.renderIframeDocument();
         }
       }
       appendScript(scripts);
@@ -78,18 +78,26 @@ module.exports = Backbone.View.extend({
    * Render inside frame's body
    * @private
    */
-  renderBody() {
-    var wrap = this.model.get('frame').get('wrapper');
+  renderIframeDocument() {
     var em = this.config.em;
+    var wrap = this.model.get('frame').get('wrapper');
+
     if (wrap) {
       var ppfx = this.ppfx;
-      //var body = this.frame.$el.contents().find('body');
       var body = $(this.frame.el.contentWindow.document.body);
       var cssc = em.get('CssComposer');
       var conf = em.get('Config');
       var confCanvas = this.config;
       var protCss = conf.protectedCss;
       var externalStyles = '';
+
+      // If the entire document becomes the canvas
+      // the document structure should be replicated in the iframe
+      // Except for the body contents which are parsed by grapes
+      // The doctype is already inherited from the document at this point
+      // if (em.config.fromDocument) {
+      //     body.replaceWith(wrap.render());
+      // }
 
       confCanvas.styles.forEach(style => {
         externalStyles += `<link rel="stylesheet" href="${style}"/>`;
@@ -362,12 +370,13 @@ module.exports = Backbone.View.extend({
 
     if (this.wrapper && typeof this.wrapper.render == 'function') {
       this.model.get('frame').set('wrapper', this.wrapper);
+
       this.$el.append(this.frame.render().el);
       var frame = this.frame;
       if (this.config.scripts.length === 0) {
-        frame.el.onload = this.renderBody;
+        frame.el.onload = this.renderIframeDocument;
       } else {
-        this.renderScripts(); // will call renderBody later
+        this.renderScripts(); // will call renderIframeDocument later
       }
     }
     var ppfx = this.ppfx;
@@ -397,6 +406,7 @@ module.exports = Backbone.View.extend({
     this.fixedOffsetEl = el.querySelector(`.${ppfx}offset-fixed-v`);
     this.toolsEl = toolsEl;
     this.el.className = this.className;
+
     return this;
   }
 });

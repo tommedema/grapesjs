@@ -5,7 +5,7 @@ module.exports = {
   rulers: false,
 
   /*
-   * Append external scripts in head of the iframe before renderBody content
+   * Append external scripts in head of the iframe before renderIframeDocument content
    * In this case, you have to add them manually later in the final HTML page
    * @example
    * scripts: [
