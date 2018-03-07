@@ -94,7 +94,7 @@ module.exports = Backbone.View.extend({
     const template = mdoc.documentElement.outerHTML.replace(regexp, '$1$3');
 
     fdoc.open();
-    fdoc.write('<!DOCTYPE html>');
+    fdoc.write('<!DOCTYPE html>'); // FIXME: this doctype should come from the parent document
     fdoc.write(template);
     fdoc.close();
 
