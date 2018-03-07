@@ -95,11 +95,19 @@ module.exports = () => {
     },
 
     /**
+     * Returns document element of the frame
+     * @return {HTMLElement}
+     */
+    getDocument() {
+      return CanvasView.frame.el.contentDocument;
+    },
+
+    /**
      * Returns body wrapper element of the frame
      * @return {HTMLElement}
      */
     getWrapperEl() {
-      return this.getBody().querySelector('#wrapper');
+      return this.getDocument().querySelector('#wrapper');
     },
 
     /**

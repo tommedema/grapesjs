@@ -82,19 +82,21 @@ module.exports = Backbone.View.extend({
 
   /**
    * If fromDocument is true, clone the entire document's structure
-   * except for the already parsed DOM components.
-   * This ensures that doctypes and classes in higher level components
-   * like html and body tags are respected.
+   * except for the body with the already parsed DOM components.
+   * This ensures that doctypes, favicons, classes, etc. in higher level components
+   * like the html tag are respected.
    * @private
    */
   cloneIframeDocument() {
     const mdoc = window.document;
     const fdoc = this.frame.el.contentDocument;
-    const regexp = /(<body[^>]*>)((?:.|[\n\r])*)(<\/body>)/gim;
-    const template = mdoc.documentElement.outerHTML.replace(regexp, '$1$3');
+    const regexp = /(<body[^>]*>)((?:.|[\n\r])*)(<\/body>)/im;
+    const wrap = this.model.get('frame').get('wrapper');
+    const template = mdoc.documentElement.outerHTML.replace(regexp, '');
 
+    // FIXME: this doctype should come from the parent document
     fdoc.open();
-    fdoc.write('<!DOCTYPE html>'); // FIXME: this doctype should come from the parent document
+    fdoc.write('<!DOCTYPE html>');
     fdoc.write(template);
     fdoc.close();
 
@@ -120,10 +122,20 @@ module.exports = Backbone.View.extend({
     const wrap = this.model.get('frame').get('wrapper');
     if (wrap) {
       const mdoc = window.document;
-
-      const body = $(fdoc.body);
-      const ppfx = this.ppfx;
       const em = this.config.em;
+      let $body = $(fdoc.body);
+
+      // If fromDocument is true, the wrapper equals the body
+      // therefore substitute the iframe's body with the wrapper
+      if (em.config.fromDocument) {
+        $body.remove();
+        $(fdoc.documentElement).append(wrap.render());
+        $body = $(fdoc.body);
+      } else {
+        $body.append(wrap.render());
+      }
+
+      const ppfx = this.ppfx;
       const cssc = em.get('CssComposer');
       const conf = em.get('Config');
       const confCanvas = this.config;
@@ -226,13 +238,14 @@ module.exports = Backbone.View.extend({
         ${protCss || ''}
       `;
 
+      $body.prepend(this.getJsContainer());
+      $body.prepend(cssc.render());
+      $body.prepend('<style>' + frameCss + '</style>');
+
       if (externalStyles) {
-        body.append(externalStyles);
+        $body.prepend(externalStyles);
       }
 
-      body.append('<style>' + frameCss + '</style>');
-      body.append(wrap.render()).append(cssc.render());
-      body.append(this.getJsContainer());
       em.trigger('loaded');
       this.frame.el.contentWindow.onscroll = this.onFrameScroll;
       this.frame.udpateOffset();
