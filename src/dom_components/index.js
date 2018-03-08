@@ -232,7 +232,7 @@ module.exports = () => {
 
       // make the wrapper identifiable through a class or id depending on config
       if (c.wrapperClass) {
-        component.addClass(ppfx + c.wrapperClass);
+        component.addClass(c.wrapperClass);
       } else {
         component.addAttributes({ id: c.wrapperId });
       }
