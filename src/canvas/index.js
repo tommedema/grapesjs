@@ -71,6 +71,14 @@ module.exports = () => {
     },
 
     /**
+     * Get wrapper
+     * @return {Object}	wrp Wrapper
+     * */
+    getWrapper() {
+      return canvas.get('wrapper');
+    },
+
+    /**
      * Returns canvas element
      * @return {HTMLElement}
      */
@@ -107,7 +115,13 @@ module.exports = () => {
      * @return {HTMLElement}
      */
     getWrapperEl() {
-      return this.getDocument().querySelector('#wrapper');
+      const doc = this.getDocument();
+      const cmc = this.getWrapper().getConfig();
+      if (cmc.wrapperClass) {
+        return doc.getElementsByClassName(cmc.wrapperClass)[0];
+      } else {
+        return doc.getElementById(cmc.wrapperId);
+      }
     },
 
     /**

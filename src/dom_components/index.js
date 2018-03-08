@@ -139,7 +139,6 @@ module.exports = () => {
     /**
      * Returns config
      * @return {Object} Config object
-     * @private
      */
     getConfig() {
       return c;
