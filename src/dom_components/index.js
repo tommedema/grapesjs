@@ -220,7 +220,6 @@ module.exports = () => {
         config: c,
         componentTypes
       });
-      component.set({ attributes: { id: 'wrapper' } }); // FIXME: avoid this if `fromDocument` is true
 
       // copy the document body's properties if `fromDocument` is true
       if (em && em.config.fromDocument) {
@@ -229,6 +228,13 @@ module.exports = () => {
           return a;
         }, {});
         component.addAttributes(attrs);
+      }
+
+      // make the wrapper identifiable through a class or id depending on config
+      if (c.wrapperClass) {
+        component.addClass(ppfx + c.wrapperClass);
+      } else {
+        component.addAttributes({ id: c.wrapperId });
       }
 
       componentView = new ComponentView({

@@ -3,6 +3,11 @@ module.exports = {
 
   wrapperId: 'wrapper',
 
+  // Define this if you prefer to use classes instead of IDs to identify the wrapper
+  // this is useful if you want to reuse the document with `fromDocument: true`
+  // and want to avoid the original body / wrapper ID to be overwritten.
+  wrapperClass: null,
+
   wrapperName: 'Body',
 
   // Default wrapper configuration
