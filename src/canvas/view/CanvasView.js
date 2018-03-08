@@ -152,7 +152,7 @@ module.exports = Backbone.View.extend({
       const cmc = cm.getConfig();
       const wrapperSelector = cmc.wrapperClass
         ? '.' + cmc.wrapperClass
-        : '.' + cmc.wrapperId;
+        : '#' + cmc.wrapperId;
 
       const baseCss = `
         * {
