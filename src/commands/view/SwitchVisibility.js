@@ -6,6 +6,6 @@ module.exports = {
 
   stop(ed) {
     const body = ed.Canvas.getBody();
-    body.className = body.className.replace(this.ppfx, '');
+    body.className = body.className.replace(this.ppfx + 'dashed', '');
   }
 };
