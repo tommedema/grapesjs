@@ -127,9 +127,13 @@ module.exports = Backbone.View.extend({
 
       // If fromDocument is true, the wrapper equals the body
       // therefore substitute the iframe's body with the wrapper
+      // and remove elements that should not be copied
       if (em.config.fromDocument) {
         $body.remove();
         $(fdoc.documentElement).append(wrap.render());
+        $(fdoc)
+          .find('[data-gjs-from-doc-ignore]')
+          .remove();
         $body = $(fdoc.body);
       } else {
         $body.append(wrap.render());
