@@ -148,11 +148,17 @@ module.exports = Backbone.View.extend({
 
       const colorWarn = '#ffca6f';
 
+      const cm = em.get('DomComponents');
+      const cmc = cm.getConfig();
+      const wrapperSelector = cmc.wrapperClass
+        ? '.' + cmc.wrapperClass
+        : '.' + cmc.wrapperId;
+
       const baseCss = `
         * {
           box-sizing: border-box;
         }
-        html, body, #wrapper {
+        html, body, ${wrapperSelector} {
           min-height: 100%;
         }
         body {
@@ -160,7 +166,7 @@ module.exports = Backbone.View.extend({
           height: 100%;
           background-color: #fff
         }
-        #wrapper {
+        ${wrapperSelector} {
           overflow: auto;
           overflow-x: hidden;
         }
