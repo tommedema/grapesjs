@@ -62,6 +62,7 @@ module.exports = config => {
 
       for (var i = 0, len = nodes.length; i < len; i++) {
         const node = nodes[i];
+
         const attrs = node.attributes || [];
         const attrsLen = attrs.length;
         const nodePrev = result[result.length - 1];
@@ -105,6 +106,12 @@ module.exports = config => {
           } else if (nodeName == 'contenteditable') {
             continue;
           } else if (nodeName.indexOf(modelAttrStart) === 0) {
+            // Persist data-gjs atributes as usual such that they can still be
+            // retrieved from the DOM. This is useful for example to remove elements
+            // that should be ignored when `fromDocument` is true based on the
+            // data-gjs-from-doc-ignore attribute.
+            model.attributes[nodeName] = nodeValue;
+
             const modelAttr = nodeName.replace(modelAttrStart, '');
             const valueLen = nodeValue.length;
             const firstChar = nodeValue && nodeValue.substr(0, 1);
