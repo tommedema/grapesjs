@@ -81,7 +81,7 @@ module.exports = Backbone.View.extend({
   },
 
   /**
-   * If fromDocument is true, clone the entire document's structure
+   * If `fromDocument` is true, clone the entire document's structure
    * except for the body with the already parsed DOM components.
    * This ensures that doctypes, favicons, classes, etc. in higher level components
    * like the html tag are respected.
