@@ -57,15 +57,14 @@ module.exports = Backbone.View.extend({
    * Insert scripts into head, it will call renderIframeDocument after all scripts loaded or failed
    * @private
    */
-  renderScripts() {
-    var frame = this.frame;
-    var that = this;
+  renderScripts(onload = true) {
+    const frame = this.frame;
 
-    frame.el.onload = () => {
-      var scripts = that.config.scripts.slice(0), // clone
+    const inject = () => {
+      var scripts = this.config.scripts.slice(0), // clone
         counter = 0;
 
-      function appendScript(scripts) {
+      const appendScript = scripts => {
         if (scripts.length > 0) {
           var script = document.createElement('script');
           script.type = 'text/javascript';
@@ -73,11 +72,17 @@ module.exports = Backbone.View.extend({
           script.onerror = script.onload = appendScript.bind(null, scripts);
           frame.el.contentDocument.head.appendChild(script);
         } else {
-          that.renderIframeDocument();
+          this.renderIframeDocument();
         }
-      }
+      };
       appendScript(scripts);
     };
+
+    if (onload) {
+      frame.el.onload = inject;
+    } else {
+      inject();
+    }
   },
 
   /**
@@ -106,12 +111,32 @@ module.exports = Backbone.View.extend({
     fdoc.write(template);
     fdoc.close();
 
+    let called = false;
+    const nextOnce = () => {
+      if (called) return;
+      called = true;
+
+      $(fdoc).off('readystatechange', nextOnce);
+
+      if (this.config.scripts.length === 0) {
+        this.renderIframeDocument();
+      } else {
+        this.renderScripts(false); // will call renderIframeDocument later
+      }
+    };
+
     // Setting frame.onload does not function after writing to the document
     // Readystatechange is called as expected
-    if (fdoc.readyState === 'complete' || fdoc.readyState === 'interactive') {
-      this.renderIframeDocument();
+    if (frameDocReady(fdoc)) {
+      nextOnce();
     } else {
-      $(fdoc).on('readystatechange', this.renderIframeDocument);
+      $(fdoc).on('readystatechange', nextOnce);
+    }
+
+    function frameDocReady(fdoc) {
+      return (
+        fdoc.readyState === 'complete' || fdoc.readyState === 'interactive'
+      );
     }
   },
 
@@ -120,11 +145,6 @@ module.exports = Backbone.View.extend({
    * @private
    */
   renderIframeDocument() {
-    const fdoc = this.frame.el.contentDocument;
-    if (fdoc.readyState !== 'interactive' && fdoc.readyState !== 'complete')
-      return;
-    $(fdoc).off('readystatechange', this.renderIframeDocument);
-
     const wrap = this.model.get('frame').get('wrapper');
     if (wrap) {
       const mdoc = window.document;
@@ -134,6 +154,7 @@ module.exports = Backbone.View.extend({
       const conf = em.get('Config');
       const confCanvas = this.config;
       const protCss = conf.protectedCss;
+      const fdoc = this.frame.el.contentDocument;
       let $body = $(fdoc.body);
 
       // If fromDocument is true, the wrapper equals the body
@@ -427,14 +448,15 @@ module.exports = Backbone.View.extend({
 
       this.$el.append(this.frame.render().el);
       var frame = this.frame;
-      if (this.config.scripts.length === 0) {
-        if (this.em.config.fromDocument) {
-          frame.el.onload = this.cloneIframeDocument;
-        } else {
-          frame.el.onload = this.renderIframeDocument;
-        }
+
+      if (this.em.config.fromDocument) {
+        frame.el.onload = this.cloneIframeDocument;
       } else {
-        this.renderScripts(); // will call renderIframeDocument later
+        if (this.config.scripts.length === 0) {
+          frame.el.onload = this.renderIframeDocument;
+        } else {
+          this.renderScripts(); // will call renderIframeDocument later
+        }
       }
     }
     var ppfx = this.ppfx;
