@@ -90,9 +90,15 @@ module.exports = Backbone.View.extend({
   cloneIframeDocument() {
     const mdoc = window.document;
     const fdoc = this.frame.el.contentDocument;
-    const regexp = /(<body[^>]*>)((?:.|[\n\r])*)(<\/body>)/im;
-    const wrap = this.model.get('frame').get('wrapper');
-    const template = mdoc.documentElement.outerHTML.replace(regexp, '');
+
+    // Create a template from the original document except for elements to be ignored
+    // and for the body because this is embedded from parsed components.
+    // <style> tags from the head should not be copied because these are parsed by the
+    // css parser and embedded into the document
+    const tree = $(mdoc.documentElement).clone(true, true);
+    tree.find('[data-gjs-from-doc-ignore], body, head > style').remove();
+    const template = tree.get(0).outerHTML;
+    tree.remove();
 
     // FIXME: this doctype should come from the parent document
     fdoc.open();
@@ -123,36 +129,21 @@ module.exports = Backbone.View.extend({
     if (wrap) {
       const mdoc = window.document;
       const em = this.config.em;
-      let $body = $(fdoc.body);
-
-      // If fromDocument is true, the wrapper equals the body
-      if (em.config.fromDocument) {
-        // Substitute the iframe's body with the wrapper
-        $body.remove();
-        $(fdoc.documentElement).append(wrap.render());
-
-        // Remove elements that should not be copied
-        $(fdoc)
-          .find('[data-gjs-from-doc-ignore]')
-          .remove();
-
-        // <style> tags from the head should not be copied because these are parsed by the
-        // css parser and embedded into the document
-        $(fdoc.head)
-          .find('style')
-          .remove();
-
-        // Reset the body reference
-        $body = $(fdoc.body);
-      } else {
-        $body.append(wrap.render());
-      }
-
       const ppfx = this.ppfx;
       const cssc = em.get('CssComposer');
       const conf = em.get('Config');
       const confCanvas = this.config;
       const protCss = conf.protectedCss;
+      let $body = $(fdoc.body);
+
+      // If fromDocument is true, the wrapper equals the body
+      if (em.config.fromDocument) {
+        $body.remove();
+        $(fdoc.documentElement).append(wrap.render());
+        $body = $(fdoc.body);
+      } else {
+        $body.append(wrap.render());
+      }
 
       let externalStyles = '';
       confCanvas.styles.forEach(style => {
@@ -260,7 +251,6 @@ module.exports = Backbone.View.extend({
       $body.prepend(this.getJsContainer());
       $body.prepend(cssc.render());
       $body.prepend('<style>' + frameCss + '</style>');
-
       if (externalStyles) {
         $body.prepend(externalStyles);
       }
