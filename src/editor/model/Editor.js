@@ -53,20 +53,27 @@ module.exports = Backbone.Model.extend({
     this.set('modules', []);
     this.set('toLoad', []);
 
-    if (c.el && (c.fromElement || c.fromDocument)) {
+    if (c.el && c.fromElement) {
+      // Retrieve the HTML from the given element
       this.config.components = c.el.innerHTML;
+    } else if (c.el && c.fromDocument) {
+      // If `fromDocument` is true we will want to copy all elements that
+      // should not be ignored (flagged by data-gjs-from-doc-ignore)
+      const tree = $(c.el).clone();
+      tree.find('[data-gjs-from-doc-ignore]').remove();
 
-      // if `fromDocument` is true we will also want to parse style tags from the
+      // Retrieve the HTML from the given element
+      this.config.components = tree.get(0).innerHTML;
+
+      // If `fromDocument` is true we will also want to parse style tags from the
       // head of the document
-      if (c.fromDocument) {
-        this.config.components =
-          $(window.document.head)
-            .find('style:not([data-gjs-from-doc-ignore])')
-            .get()
-            .reduce((s, e) => {
-              return s + e.outerHTML + '\n';
-            }, '') + this.config.components;
-      }
+      this.config.components =
+        $(window.document.head)
+          .find('style:not([data-gjs-from-doc-ignore])')
+          .get()
+          .reduce((s, e) => {
+            return s + e.outerHTML + '\n';
+          }, '') + this.config.components;
     }
 
     // Load modules
