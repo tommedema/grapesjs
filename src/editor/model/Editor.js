@@ -55,6 +55,18 @@ module.exports = Backbone.Model.extend({
 
     if (c.el && (c.fromElement || c.fromDocument)) {
       this.config.components = c.el.innerHTML;
+
+      // if `fromDocument` is true we will also want to parse style tags from the
+      // head of the document
+      if (c.fromDocument) {
+        this.config.components =
+          $(window.document.head)
+            .find('style:not([data-gjs-from-doc-ignore])')
+            .get()
+            .reduce((s, e) => {
+              return s + e.outerHTML + '\n';
+            }, '') + this.config.components;
+      }
     }
 
     // Load modules
