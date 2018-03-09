@@ -126,14 +126,23 @@ module.exports = Backbone.View.extend({
       let $body = $(fdoc.body);
 
       // If fromDocument is true, the wrapper equals the body
-      // therefore substitute the iframe's body with the wrapper
-      // and remove elements that should not be copied
       if (em.config.fromDocument) {
+        // Substitute the iframe's body with the wrapper
         $body.remove();
         $(fdoc.documentElement).append(wrap.render());
+
+        // Remove elements that should not be copied
         $(fdoc)
           .find('[data-gjs-from-doc-ignore]')
           .remove();
+
+        // <style> tags from the head should not be copied because these are parsed by the
+        // css parser and embedded into the document
+        $(fdoc.head)
+          .find('style')
+          .remove();
+
+        // Reset the body reference
         $body = $(fdoc.body);
       } else {
         $body.append(wrap.render());
