@@ -33,9 +33,9 @@ module.exports = Backbone.View.extend({
       const mdoc = window.document;
       const tree = $(mdoc.documentElement).clone(true, true);
       const fromDocElements = tree
-        .find('[data-gjs-from-doc-ignore]')
+        .find('[data-gjs-from-doc]')
         .clone(true, true);
-      tree.find('[data-gjs-from-doc-ignore], body, head > style').remove();
+      tree.find('[data-gjs-from-doc], body, head > style').remove();
       canvasDocumentTemplate = tree.get(0).outerHTML;
       tree.remove();
 
@@ -50,7 +50,7 @@ module.exports = Backbone.View.extend({
         mdoc.insertBefore(newDoctype, mdoc.childNodes[0]);
       }
 
-      // FIXME: the data-gjs-from-doc-ignore attribute should be renamed to
+      // FIXME: the data-gjs-from-doc attribute should be renamed to
       // data-gjs-from-doc and they should be included in the template
       // now reset the html of the document
       // the body will be replaced later with the canvas

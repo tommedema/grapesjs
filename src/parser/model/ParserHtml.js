@@ -105,11 +105,11 @@ module.exports = config => {
             model.classes = this.parseClass(nodeValue);
           } else if (nodeName == 'contenteditable') {
             continue;
-          } else if (nodeName === 'data-gjs-from-doc-ignore') {
-            // Persist data-gjs-from-doc-ignore atributes as usual, such that
+          } else if (nodeName === 'data-gjs-from-doc') {
+            // Persist data-gjs-from-doc atributes as usual, such that
             // they can still be retrieved from the DOM. This is useful to
             // remove elements that should be ignored when `fromDocument` is true
-            //  based on the data-gjs-from-doc-ignore attribute.
+            //  based on the data-gjs-from-doc attribute.
             model.attributes[nodeName] = nodeValue;
           } else if (nodeName.indexOf(modelAttrStart) === 0) {
             const modelAttr = nodeName.replace(modelAttrStart, '');
