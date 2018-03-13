@@ -63,6 +63,7 @@ module.exports = Backbone.View.extend({
       });
 
       contEl = $(mdoc.body);
+      conf.el = mdoc.body;
     }
 
     if (conf.width) contEl.css('width', conf.width);
