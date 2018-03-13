@@ -200,8 +200,8 @@ module.exports = () => {
     /**
      * Render canvas
      * */
-    render() {
-      return CanvasView.render().el;
+    render(canvasDocumentTemplate = null) {
+      return CanvasView.render(canvasDocumentTemplate).el;
     },
 
     /**

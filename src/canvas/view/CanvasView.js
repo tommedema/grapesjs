@@ -92,23 +92,13 @@ module.exports = Backbone.View.extend({
    * like the html tag are respected.
    * @private
    */
-  cloneIframeDocument() {
-    const mdoc = window.document;
+  cloneIframeDocument(canvasDocumentTemplate) {
     const fdoc = this.frame.el.contentDocument;
 
-    // Create a template from the original document except for elements to be ignored
-    // and for the body because this is embedded from parsed components.
-    // <style> tags from the head should not be copied because these are parsed by the
-    // css parser and embedded into the document
-    const tree = $(mdoc.documentElement).clone(true, true);
-    tree.find('[data-gjs-from-doc-ignore], body, head > style').remove();
-    const template = tree.get(0).outerHTML;
-    tree.remove();
-
-    // FIXME: this doctype should come from the parent document
-    fdoc.open();
+    // FIXME: this doctype should be inherited from the template parent document
+    fdoc.open('text/html', 'replace');
     fdoc.write('<!DOCTYPE html>');
-    fdoc.write(template);
+    fdoc.write(canvasDocumentTemplate);
     fdoc.close();
 
     let called = false;
@@ -127,16 +117,10 @@ module.exports = Backbone.View.extend({
 
     // Setting frame.onload does not function after writing to the document
     // Readystatechange is called as expected
-    if (frameDocReady(fdoc)) {
+    if (fdoc.readyState === 'complete' || fdoc.readyState === 'interactive') {
       nextOnce();
     } else {
       $(fdoc).on('readystatechange', nextOnce);
-    }
-
-    function frameDocReady(fdoc) {
-      return (
-        fdoc.readyState === 'complete' || fdoc.readyState === 'interactive'
-      );
     }
   },
 
@@ -440,7 +424,7 @@ module.exports = Backbone.View.extend({
     return this.jsContainer;
   },
 
-  render() {
+  render(canvasDocumentTemplate = null) {
     this.wrapper = this.model.get('wrapper');
 
     if (this.wrapper && typeof this.wrapper.render == 'function') {
@@ -450,7 +434,10 @@ module.exports = Backbone.View.extend({
       var frame = this.frame;
 
       if (this.em.config.fromDocument) {
-        frame.el.onload = this.cloneIframeDocument;
+        frame.el.onload = this.cloneIframeDocument.bind(
+          this,
+          canvasDocumentTemplate
+        );
       } else {
         if (this.config.scripts.length === 0) {
           frame.el.onload = this.renderIframeDocument;

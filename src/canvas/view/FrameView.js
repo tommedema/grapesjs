@@ -67,8 +67,7 @@ module.exports = require('backbone').View.extend({
     // FIXME
     // 1. inherit the doctype from the parent document
     // 2. only set this if `fromDocument` is true
-    // 3. check browser compatibility
-    // 4. check if doctype is effective
+    // 3. check if doctype is effective
     this.$el.attr({ srcdoc: '<!DOCTYPE html>' });
 
     return this;
