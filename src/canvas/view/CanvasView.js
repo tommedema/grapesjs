@@ -253,12 +253,12 @@ module.exports = Backbone.View.extend({
         ${protCss || ''}
       `;
 
-      $body.prepend(this.getJsContainer());
-      $body.prepend(cssc.render());
-      $body.prepend('<style>' + frameCss + '</style>');
       if (externalStyles) {
-        $body.prepend(externalStyles);
+        $body.append(externalStyles);
       }
+      $body.append('<style>' + frameCss + '</style>');
+      $body.append(cssc.render());
+      $body.append(this.getJsContainer());
 
       em.trigger('loaded');
       this.frame.el.contentWindow.onscroll = this.onFrameScroll;
