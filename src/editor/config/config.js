@@ -16,6 +16,17 @@ module.exports = {
   // that rely on doctypes and above-body classes to render properly.
   fromDocument: 0,
 
+  // If `fromDocument` is true, the canvas iframe's document will be transposed with
+  // the main document. The main document containing the canvas iframe will then be reset to
+  // a clean state using this document template. Do not include `<html></html>` tags.
+  fromDocumentParentTemplate: `
+    <head>
+      <meta charset="utf8">
+      <title></title>
+    </head>
+    <body></body>
+  `,
+
   // Show an alert before unload the page with unsaved changes
   noticeOnUnload: true,
 

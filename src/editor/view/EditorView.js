@@ -54,13 +54,7 @@ module.exports = Backbone.View.extend({
       // data-gjs-from-doc and they should be included in the template
       // now reset the html of the document
       // the body will be replaced later with the canvas
-      $(mdoc.documentElement).html(`
-        <head>
-          <meta charset="utf8">
-          <title></title>
-        </head>
-        <body></body>
-      `);
+      $(mdoc.documentElement).html(conf.fromDocumentParentTemplate);
 
       // re-insert grapes related elements such as grapes css
       $(mdoc.head).append(fromDocElements);
