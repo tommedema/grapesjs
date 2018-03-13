@@ -32,6 +32,9 @@ module.exports = Backbone.View.extend({
       // css parser and embedded into the document
       const mdoc = window.document;
       const tree = $(mdoc.documentElement).clone(true, true);
+      const fromDocElements = tree
+        .find('[data-gjs-from-doc-ignore]')
+        .clone(true, true);
       tree.find('[data-gjs-from-doc-ignore], body, head > style').remove();
       canvasDocumentTemplate = tree.get(0).outerHTML;
       tree.remove();
@@ -54,18 +57,13 @@ module.exports = Backbone.View.extend({
       $(mdoc.documentElement).html(`
         <head>
           <meta charset="utf8">
-          <title>editor</title>
-          <link rel="stylesheet" href="dist/css/grapes.min.css" data-gjs-from-doc-ignore>
-          <style data-gjs-from-doc-ignore>
-            body,
-            html {
-              height: 100%;
-              margin: 0;
-            }
-          </style>
+          <title></title>
         </head>
         <body></body>
       `);
+
+      // re-insert grapes related elements such as grapes css
+      $(mdoc.head).append(fromDocElements);
 
       // cleanup the html element itself
       Array.from(mdoc.documentElement.attributes).forEach(({ name }) => {
