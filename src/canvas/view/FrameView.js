@@ -61,14 +61,12 @@ module.exports = require('backbone').View.extend({
   render() {
     this.$el.attr({ class: this.ppfx + 'frame' });
 
-    // Set the doctype prior to the document being loaded
-    // See https://developer.mozilla.org/en-US/docs/Web/API/Document/doctype
-    // And https://stackoverflow.com/a/21523767/45974
-    // FIXME
-    // 1. inherit the doctype from the parent document
-    // 2. only set this if `fromDocument` is true
-    // 3. check if doctype is effective
-    this.$el.attr({ srcdoc: '<!DOCTYPE html>' });
+    // If `fromDocument` is true, inherit the document's doctype prior to
+    // the iframe's document being loaded
+    const doctypeStr = new XMLSerializer().serializeToString(document.doctype);
+    if (this.em.config.fromDocument && window.document.doctype) {
+      this.$el.attr({ srcdoc: doctypeStr });
+    }
 
     return this;
   }

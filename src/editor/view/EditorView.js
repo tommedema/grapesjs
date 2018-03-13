@@ -50,13 +50,11 @@ module.exports = Backbone.View.extend({
         mdoc.insertBefore(newDoctype, mdoc.childNodes[0]);
       }
 
-      // FIXME: the data-gjs-from-doc attribute should be renamed to
-      // data-gjs-from-doc and they should be included in the template
-      // now reset the html of the document
-      // the body will be replaced later with the canvas
+      // insert the parent document template
       $(mdoc.documentElement).html(conf.fromDocumentParentTemplate);
 
       // re-insert grapes related elements such as grapes css
+      // these elements have the `data-gjs-from-doc` attribute
       $(mdoc.head).append(fromDocElements);
 
       // cleanup the html element itself

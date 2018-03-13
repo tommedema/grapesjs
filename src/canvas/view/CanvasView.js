@@ -95,9 +95,10 @@ module.exports = Backbone.View.extend({
   cloneIframeDocument(canvasDocumentTemplate) {
     const fdoc = this.frame.el.contentDocument;
 
-    // FIXME: this doctype should be inherited from the template parent document
     fdoc.open('text/html', 'replace');
-    fdoc.write('<!DOCTYPE html>');
+    if (this.frame.el.attributes.srcDoc) {
+      fdoc.write(this.frame.el.attributes.srcDoc.value);
+    }
     fdoc.write(canvasDocumentTemplate);
     fdoc.close();
 
