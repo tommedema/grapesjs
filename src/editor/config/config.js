@@ -85,9 +85,14 @@ module.exports = {
   nativeDnD: 1,
 
   // Show the wrapper component in the final code, eg. in editor.getHtml()
+  // you probably want to enable this is `fromDocument` is true
+  // since the wrapper's (body's) attributes and classes may affect how the
+  // document is rendered
   exportWrapper: 0,
 
   // The wrapper, if visible, will be shown as a `<body>`
+  // you probably want to disable this if `fromDocument` is true
+  // since the wrapper is already a body element in this case
   wrappesIsBody: 1,
 
   // Usually when you update the `style` of the component this changes the
