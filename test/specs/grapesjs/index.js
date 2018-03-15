@@ -6,6 +6,7 @@ describe('GrapesJS', () => {
     var fixtures;
     var fixture;
     var editorName;
+    var styleString;
     var htmlString;
     var config;
     var cssString;
@@ -30,7 +31,8 @@ describe('GrapesJS', () => {
     beforeEach(() => {
       htmlString = '<div class="test1"></div><div class="test2"></div>';
       cssString = '.test2{color:red}.test3{color:blue}';
-      documentEl = '<style>' + cssString + '</style>' + htmlString;
+      styleString = '<style>' + cssString + '</style>';
+      documentEl = styleString + htmlString;
       config = {
         container: '#' + editorName,
         storageManager: {
@@ -129,16 +131,36 @@ describe('GrapesJS', () => {
       expect(editor.getStyle().length).toEqual(2);
     });
 
-    it('Init editor from document: template is copied', () => {
-      config.fromDocument = true;
-      delete config.container;
-      fixtures.innerHTML = documentEl;
-      const editor = obj.init(config);
-      const html = editor.getHtml();
-      const css = editor.getCss();
-      const protCss = editor.getConfig().protectedCss;
-      expect(html).toEqual(`<div id="fixtures">${htmlString}</div>`);
-      expect(css).toEqual(protCss + '.test2{color:red;}'); // .test3 is discarded in css
+    describe.only('Init editor from document', () => {
+      beforeEach(() => {
+        config.fromDocument = true;
+        delete config.container;
+        document.head.innerHTML = '';
+        document.body.innerHTML = `<div id="fixtures"><div id="${editorName}"></div></div>`;
+      });
+
+      it("parses CSS from the document's head too", () => {
+        fixtures.innerHTML = documentEl; // htmlString;
+        // $(document.head).append(styleString);
+        const editor = obj.init(config);
+        const html = editor.getHtml();
+        const css = editor.getCss({ avoidProtected: true });
+        console.log(`got css #2 ${css}`);
+        // const protCss = editor.getConfig().protectedCss;
+        // expect(html).toEqual(`<div id="fixtures">${htmlString}</div>`);
+        // expect(css).toEqual(protCss + '.test2{color:red;}'); // .test3 is discarded in css
+      });
+
+      it("sets the canvas HTML to the document's html", () => {
+        fixtures.innerHTML = documentEl;
+        const editor = obj.init(config);
+        const html = editor.getHtml();
+        const css = editor.getCss({ avoidProtected: true });
+        console.log(`got css #1 ${css}`);
+        const protCss = editor.getConfig().protectedCss;
+        expect(html).toEqual(`<div id="fixtures">${htmlString}</div>`);
+        expect(css).toEqual(protCss + '.test2{color:red;}'); // .test3 is discarded in css
+      });
     });
 
     it('Set components as HTML', () => {

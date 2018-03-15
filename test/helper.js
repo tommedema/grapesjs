@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { JSDOM } from 'jsdom';
 import { XMLSerializer } from 'xmldom';
 
-const dom = new JSDOM('<!doctype html><html><body></body></html>');
+const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
 const window = dom.window;
 
 // Fix for the require of jquery

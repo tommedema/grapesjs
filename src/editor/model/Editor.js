@@ -331,14 +331,14 @@ module.exports = Backbone.Model.extend({
     const cssc = this.get('CssComposer');
     const wrp = this.get('DomComponents').getComponent();
     const protCss = !avoidProt ? config.protectedCss : '';
+    const canvasCss = this.get('CodeManager').getCode(wrp, 'css', {
+      cssc,
+      wrappesIsBody
+    });
 
-    return (
-      protCss +
-      this.get('CodeManager').getCode(wrp, 'css', {
-        cssc,
-        wrappesIsBody
-      })
-    );
+    console.log(`canvasCss is ${canvasCss}`);
+
+    return protCss + canvasCss;
   },
 
   /**
