@@ -192,6 +192,16 @@ describe('GrapesJS', () => {
       });
     });
 
+    it('Respects wrapperClass configuration parameter', () => {
+      config.components = htmlString;
+      config.domComponents = { wrapperClass: 'test-wrapper' };
+      var editor = obj.init(config);
+      expect(window.frames[0].document.querySelector('#wrapper')).toNotExist();
+      expect(
+        window.frames[0].document.querySelector('.test-wrapper')
+      ).toExist();
+    });
+
     it('Set components as HTML', () => {
       var editor = obj.init(config);
       editor.setComponents(htmlString);
