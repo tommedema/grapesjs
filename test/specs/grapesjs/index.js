@@ -176,6 +176,12 @@ describe('GrapesJS', () => {
         expect(documentStr).toInclude('<meta charset="utf-8">');
         expect(documentStr).toNotInclude(originalCharset);
       });
+
+      it.skip('should inherit the doctype from the parent template', () => {
+        // skipped because JSDOM does not seem to parse the doctypes of frame documents
+        // when these doctypes were set dynamically
+        // i.e. window.frames[0].document.doctype == undefined
+      });
     });
 
     it('Set components as HTML', () => {

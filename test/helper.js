@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom';
 import { XMLSerializer } from 'xmldom';
 
 const innerHTML = '<head></head><body></body>';
-const dom = new JSDOM(`<!doctype html><html>${innerHTML}</html>`);
+const dom = new JSDOM(`<html>${innerHTML}</html>`);
 const window = dom.window;
 
 global.dom = dom;
