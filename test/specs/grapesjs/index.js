@@ -155,6 +155,27 @@ describe('GrapesJS', () => {
         expect(html).toEqual(`<div id="fixtures">${htmlString}</div>`);
         expect(css).toEqual('.test2{color:red;}'); // .test3 is discarded in css
       });
+
+      it('uses the parent documents HTML as the canvas template', () => {
+        const originalCharset = '<meta charset="ISO-8859-1">';
+        $(document.head).append(originalCharset);
+        fixtures.innerHTML = documentEl;
+        const editor = obj.init(config);
+        expect(window.frames[0].document.documentElement.outerHTML).toInclude(
+          originalCharset
+        );
+      });
+
+      it.only('sets the parent documents HTML to a clean template', () => {
+        const originalCharset = '<meta charset="ISO-8859-1">';
+        $(document.head).append(originalCharset);
+        fixtures.innerHTML = documentEl;
+        const editor = obj.init(config);
+        const documentStr = dom.serialize();
+        expect(documentStr).toInclude('<!DOCTYPE html>');
+        expect(documentStr).toInclude('<meta charset="utf-8">');
+        expect(documentStr).toNotInclude(originalCharset);
+      });
     });
 
     it('Set components as HTML', () => {

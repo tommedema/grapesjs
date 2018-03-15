@@ -21,7 +21,7 @@ module.exports = {
   // a clean state using this document template. Do not include `<html></html>` tags.
   fromDocumentParentTemplate: `
     <head>
-      <meta charset="utf8">
+      <meta charset="utf-8">
       <title></title>
     </head>
     <body></body>

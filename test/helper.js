@@ -8,6 +8,7 @@ const innerHTML = '<head></head><body></body>';
 const dom = new JSDOM(`<!doctype html><html>${innerHTML}</html>`);
 const window = dom.window;
 
+global.dom = dom;
 global.resetDom = () => {
   dom.window.document.documentElement.innerHTML = innerHTML;
 };
