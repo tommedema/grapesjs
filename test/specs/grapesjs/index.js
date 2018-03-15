@@ -167,6 +167,13 @@ describe('GrapesJS', () => {
       });
 
       it('sets the parent documents HTML to a clean template', () => {
+        config.fromDocumentParentTemplate = `
+          <head>
+            <meta charset="utf-8">
+            <title>clean</title>
+          </head>
+          <body></body>
+        `;
         const originalCharset = '<meta charset="ISO-8859-1">';
         $(document.head).append(originalCharset);
         fixtures.innerHTML = documentEl;
@@ -174,6 +181,7 @@ describe('GrapesJS', () => {
         const documentStr = dom.serialize();
         expect(documentStr).toInclude('<!DOCTYPE html>');
         expect(documentStr).toInclude('<meta charset="utf-8">');
+        expect(documentStr).toInclude('<title>clean</title>');
         expect(documentStr).toNotInclude(originalCharset);
       });
 
