@@ -4,8 +4,13 @@ import sinon from 'sinon';
 import { JSDOM } from 'jsdom';
 import { XMLSerializer } from 'xmldom';
 
-const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
+const innerHTML = '<head></head><body></body>';
+const dom = new JSDOM(`<!doctype html><html>${innerHTML}</html>`);
 const window = dom.window;
+
+global.resetDom = () => {
+  dom.window.document.documentElement.innerHTML = innerHTML;
+};
 
 // Fix for the require of jquery
 var Module = require('module');
