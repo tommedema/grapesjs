@@ -2,6 +2,7 @@ import _ from 'underscore';
 import expect from 'expect';
 import sinon from 'sinon';
 import { JSDOM } from 'jsdom';
+import { XMLSerializer } from 'xmldom';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>');
 const window = dom.window;
@@ -46,3 +47,6 @@ Object.keys(window).forEach(key => {
     global[key] = window[key];
   }
 });
+
+// polyfill XMLSerializer
+global.XMLSerializer = XMLSerializer;
