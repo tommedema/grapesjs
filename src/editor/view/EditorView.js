@@ -55,7 +55,9 @@ module.exports = Backbone.View.extend({
 
       // re-insert grapes related elements such as grapes css
       // these elements have the `data-gjs-from-doc` attribute
-      $(mdoc.head).append(fromDocElements);
+      if (fromDocElements.length > 0) {
+        $(mdoc.head).append(fromDocElements);
+      }
 
       // cleanup the html element itself
       Array.from(mdoc.documentElement.attributes).forEach(({ name }) => {
