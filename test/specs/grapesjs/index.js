@@ -190,16 +190,39 @@ describe('GrapesJS', () => {
         // when these doctypes were set dynamically
         // i.e. window.frames[0].document.doctype == undefined
       });
+
+      it('does not use data-gjs-from-doc attributed elements for the template', () => {
+        $(document.head).append(
+          '<link rel="stylesheet" href="dist/css/grapes.min.css" data-gjs-from-doc>'
+        );
+        fixtures.innerHTML =
+          htmlString + '<div data-gjs-from-doc>ignore me</div>';
+        const editor = obj.init(config);
+        const fDocStr = window.frames[0].document.documentElement.outerHTML;
+        expect(fDocStr).toNotInclude('ignore me');
+        expect(fDocStr).toNotInclude('grapes.min.css');
+      });
+
+      it('persists data-gjs-from-doc attributed elements in main document', () => {
+        $(document.head).append(
+          '<link rel="stylesheet" href="dist/css/grapes.min.css" data-gjs-from-doc>'
+        );
+        fixtures.innerHTML =
+          htmlString + '<div data-gjs-from-doc>ignore me</div>';
+        const editor = obj.init(config);
+        const documentStr = dom.serialize();
+        expect(documentStr).toInclude('ignore me');
+        expect(documentStr).toInclude('grapes.min.css');
+      });
     });
 
     it('Respects wrapperClass configuration parameter', () => {
       config.components = htmlString;
       config.domComponents = { wrapperClass: 'test-wrapper' };
-      var editor = obj.init(config);
-      expect(window.frames[0].document.querySelector('#wrapper')).toNotExist();
-      expect(
-        window.frames[0].document.querySelector('.test-wrapper')
-      ).toExist();
+      const editor = obj.init(config);
+      const fdoc = window.frames[0].document;
+      expect(fdoc.querySelector('#wrapper')).toNotExist();
+      expect(fdoc.querySelector('.test-wrapper')).toExist();
     });
 
     it('Set components as HTML', () => {
