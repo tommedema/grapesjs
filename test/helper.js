@@ -49,4 +49,5 @@ Object.keys(window).forEach(key => {
 });
 
 // polyfill XMLSerializer
+// see also https://github.com/jsdom/jsdom/issues/1368
 global.XMLSerializer = XMLSerializer;
