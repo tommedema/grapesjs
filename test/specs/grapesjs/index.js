@@ -166,7 +166,7 @@ describe('GrapesJS', () => {
         );
       });
 
-      it.only('sets the parent documents HTML to a clean template', () => {
+      it('sets the parent documents HTML to a clean template', () => {
         const originalCharset = '<meta charset="ISO-8859-1">';
         $(document.head).append(originalCharset);
         fixtures.innerHTML = documentEl;
