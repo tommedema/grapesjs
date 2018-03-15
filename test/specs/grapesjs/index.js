@@ -129,6 +129,18 @@ describe('GrapesJS', () => {
       expect(editor.getStyle().length).toEqual(2);
     });
 
+    it('Init editor from document: template is copied', () => {
+      config.fromDocument = true;
+      delete config.container;
+      fixtures.innerHTML = documentEl;
+      const editor = obj.init(config);
+      const html = editor.getHtml();
+      const css = editor.getCss();
+      const protCss = editor.getConfig().protectedCss;
+      expect(html).toEqual(`<div id="fixtures">${htmlString}</div>`);
+      expect(css).toEqual(protCss + '.test2{color:red;}'); // .test3 is discarded in css
+    });
+
     it('Set components as HTML', () => {
       var editor = obj.init(config);
       editor.setComponents(htmlString);
