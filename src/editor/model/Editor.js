@@ -331,6 +331,9 @@ module.exports = Backbone.Model.extend({
     const cssc = this.get('CssComposer');
     const wrp = this.get('DomComponents').getComponent();
     const protCss = !avoidProt ? config.protectedCss : '';
+
+    console.log('getting canvas css with wrp %j', wrp);
+
     const canvasCss = this.get('CodeManager').getCode(wrp, 'css', {
       cssc,
       wrappesIsBody
