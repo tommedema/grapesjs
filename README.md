@@ -7,6 +7,8 @@
 
 <p align="center"><img src="http://grapesjs.com/img/grapesjs-front-page-m.jpg" alt="GrapesJS" width="500" align="center"/></p>
 
+**Note**: this is a temporary fork of GrapesJS that will be probably be abandoned once the expose `baseCss` [PR](https://github.com/artf/grapesjs/pull/942) and subsequent `from-document` PR are both merged. For more information on the `from-document` feature, see below.
+
 
 GrapesJS is a free and open source Web Builder Framework which helps building HTML templates, faster and easily, to be delivered in sites, newsletters or mobile apps. Mainly, GrapesJS was designed to be used inside a [CMS] to speed up the creation of dynamic templates. To better understand this concept check the image below
 
