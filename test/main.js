@@ -1,6 +1,8 @@
 //import grapesjs from './../src';
 
 describe('Main', () => {
+  beforeEach(resetDom);
+
   describe('Startup', () => {
     it('Main object should be loaded', () => {
       expect(grapesjs).toExist();

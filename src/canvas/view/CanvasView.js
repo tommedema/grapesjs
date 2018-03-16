@@ -4,7 +4,13 @@ const $ = Backbone.$;
 
 module.exports = Backbone.View.extend({
   initialize(o) {
-    _.bindAll(this, 'renderBody', 'onFrameScroll', 'clearOff');
+    _.bindAll(
+      this,
+      'cloneIframeDocument',
+      'renderIframeDocument',
+      'onFrameScroll',
+      'clearOff'
+    );
     on(window, 'scroll resize', this.clearOff);
     this.config = o.config || {};
     this.em = this.config.em || {};
@@ -48,18 +54,17 @@ module.exports = Backbone.View.extend({
   },
 
   /**
-   * Insert scripts into head, it will call renderBody after all scripts loaded or failed
+   * Insert scripts into head, it will call renderIframeDocument after all scripts loaded or failed
    * @private
    */
-  renderScripts() {
-    var frame = this.frame;
-    var that = this;
+  renderScripts(onload = true) {
+    const frame = this.frame;
 
-    frame.el.onload = () => {
-      var scripts = that.config.scripts.slice(0), // clone
+    const inject = () => {
+      var scripts = this.config.scripts.slice(0), // clone
         counter = 0;
 
-      function appendScript(scripts) {
+      const appendScript = scripts => {
         if (scripts.length > 0) {
           var script = document.createElement('script');
           script.type = 'text/javascript';
@@ -67,35 +72,101 @@ module.exports = Backbone.View.extend({
           script.onerror = script.onload = appendScript.bind(null, scripts);
           frame.el.contentDocument.head.appendChild(script);
         } else {
-          that.renderBody();
+          this.renderIframeDocument();
         }
-      }
+      };
       appendScript(scripts);
     };
+
+    if (onload) {
+      frame.el.onload = inject;
+    } else {
+      inject();
+    }
+  },
+
+  /**
+   * If `fromDocument` is true, clone the entire document's structure
+   * except for the body with the already parsed DOM components.
+   * This ensures that doctypes, favicons, classes, etc. in higher level components
+   * like the html tag are respected.
+   * @private
+   */
+  cloneIframeDocument(canvasDocumentTemplate) {
+    const fdoc = this.frame.el.contentDocument;
+
+    fdoc.open('text/html', 'replace');
+    if (this.frame.el.attributes.srcDoc) {
+      fdoc.write(this.frame.el.attributes.srcDoc.value);
+    }
+    fdoc.write(canvasDocumentTemplate);
+    fdoc.close();
+
+    let called = false;
+    const nextOnce = () => {
+      if (called) return;
+      called = true;
+
+      $(fdoc).off('readystatechange', nextOnce);
+
+      if (this.config.scripts.length === 0) {
+        this.renderIframeDocument();
+      } else {
+        this.renderScripts(false); // will call renderIframeDocument later
+      }
+    };
+
+    // Setting frame.onload does not function after writing to the document
+    // Readystatechange is called as expected
+    if (fdoc.readyState === 'complete' || fdoc.readyState === 'interactive') {
+      nextOnce();
+    } else {
+      $(fdoc).on('readystatechange', nextOnce);
+    }
   },
 
   /**
    * Render inside frame's body
    * @private
    */
-  renderBody() {
-    var wrap = this.model.get('frame').get('wrapper');
-    var em = this.config.em;
+  renderIframeDocument() {
+    const wrap = this.model.get('frame').get('wrapper');
     if (wrap) {
-      var ppfx = this.ppfx;
-      //var body = this.frame.$el.contents().find('body');
-      var body = $(this.frame.el.contentWindow.document.body);
-      var cssc = em.get('CssComposer');
-      var conf = em.get('Config');
-      var confCanvas = this.config;
-      var protCss = conf.protectedCss;
-      var externalStyles = '';
+      const mdoc = window.document;
+      const em = this.config.em;
+      const ppfx = this.ppfx;
+      const cssc = em.get('CssComposer');
+      const conf = em.get('Config');
+      const confCanvas = this.config;
+      const protCss = conf.protectedCss;
+      const fdoc = this.frame.el.contentDocument;
+      let $body = $(fdoc.body);
 
+      // If fromDocument is true, the wrapper equals the body
+      if (em.config.fromDocument) {
+        $body.remove();
+        $(fdoc.documentElement).append(wrap.render());
+        $body = $(fdoc.body);
+      } else {
+        $body.append(wrap.render());
+      }
+
+      let externalStyles = '';
       confCanvas.styles.forEach(style => {
         externalStyles += `<link rel="stylesheet" href="${style}"/>`;
       });
 
       const colorWarn = '#ffca6f';
+
+      const cm = em.get('DomComponents');
+      const cmc = cm.getConfig();
+      const wrapperSelector = cmc.wrapperClass
+        ? '.' + cmc.wrapperClass
+        : '#' + cmc.wrapperId;
+
+      const baseCss = em.config.baseCss
+        ? em.config.baseCss.replace('%WRAPPER_SELECTOR%', wrapperSelector)
+        : '';
 
       // I need all this styles to make the editor work properly
       // Remove `html { height: 100%;}` from the baseCss as it gives jumpings
@@ -106,7 +177,7 @@ module.exports = Backbone.View.extend({
       // For the moment I give the priority to Firefox as it might be
       // CKEditor's issue
       var frameCss = `
-        ${em.config.baseCss || ''}
+        ${baseCss}
 
         .${ppfx}dashed *[data-highlightable] {
           outline: 1px dashed rgba(170,170,170,0.7);
@@ -158,27 +229,24 @@ module.exports = Backbone.View.extend({
       `;
 
       if (externalStyles) {
-        body.append(externalStyles);
+        $body.append(externalStyles);
       }
+      $body.append('<style>' + frameCss + '</style>');
+      $body.append(cssc.render());
+      $body.append(this.getJsContainer());
 
-      body.append('<style>' + frameCss + '</style>');
-      body.append(wrap.render()).append(cssc.render());
-      body.append(this.getJsContainer());
       em.trigger('loaded');
       this.frame.el.contentWindow.onscroll = this.onFrameScroll;
       this.frame.udpateOffset();
 
       // When the iframe is focused the event dispatcher is not the same so
       // I need to delegate all events to the parent document
-      const doc = document;
-      const fdoc = this.frame.el.contentDocument;
-
       // Unfortunately just creating `KeyboardEvent(e.type, e)` is not enough,
       // the keyCode/which will be always `0`. Even if it's an old/deprecated
       // property keymaster (and many others) still use it... using `defineProperty`
       // hack seems the only way
       const createCustomEvent = (e, cls) => {
-        var oEvent = new window[cls](e.type, e);
+        const oEvent = new window[cls](e.type, e);
         oEvent.keyCodeVal = e.keyCode;
         ['keyCode', 'which'].forEach(prop => {
           Object.defineProperty(oEvent, prop, {
@@ -196,7 +264,7 @@ module.exports = Backbone.View.extend({
       ].forEach(obj =>
         obj.event.split(' ').forEach(event => {
           fdoc.addEventListener(event, e =>
-            doc.dispatchEvent(createCustomEvent(e, obj.class))
+            mdoc.dispatchEvent(createCustomEvent(e, obj.class))
           );
         })
       );
@@ -331,17 +399,26 @@ module.exports = Backbone.View.extend({
     return this.jsContainer;
   },
 
-  render() {
+  render(canvasDocumentTemplate = null) {
     this.wrapper = this.model.get('wrapper');
 
     if (this.wrapper && typeof this.wrapper.render == 'function') {
       this.model.get('frame').set('wrapper', this.wrapper);
+
       this.$el.append(this.frame.render().el);
       var frame = this.frame;
-      if (this.config.scripts.length === 0) {
-        frame.el.onload = this.renderBody;
+
+      if (this.em.config.fromDocument) {
+        frame.el.onload = this.cloneIframeDocument.bind(
+          this,
+          canvasDocumentTemplate
+        );
       } else {
-        this.renderScripts(); // will call renderBody later
+        if (this.config.scripts.length === 0) {
+          frame.el.onload = this.renderIframeDocument;
+        } else {
+          this.renderScripts(); // will call renderIframeDocument later
+        }
       }
     }
     var ppfx = this.ppfx;
@@ -371,6 +448,7 @@ module.exports = Backbone.View.extend({
     this.fixedOffsetEl = el.querySelector(`.${ppfx}offset-fixed-v`);
     this.toolsEl = toolsEl;
     this.el.className = this.className;
+
     return this;
   }
 });

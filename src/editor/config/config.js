@@ -11,6 +11,22 @@ module.exports = {
   // If true, will fetch HTML and CSS from selected container
   fromElement: 0,
 
+  // If true, will fetch the entire document (including doctype, html, head, and body tags)
+  // and inject it into the canvas iframe. This improves compatibility with complex templates
+  // that rely on doctypes and above-body classes to render properly.
+  fromDocument: 0,
+
+  // If `fromDocument` is true, the canvas iframe's document will be transposed with
+  // the main document. The main document containing the canvas iframe will then be reset to
+  // a clean state using this document template. Do not include `<html></html>` tags.
+  fromDocumentParentTemplate: `
+    <head>
+      <meta charset="utf-8">
+      <title></title>
+    </head>
+    <body></body>
+  `,
+
   // Show an alert before unload the page with unsaved changes
   noticeOnUnload: true,
 
@@ -34,11 +50,13 @@ module.exports = {
   // and sets a default background color of white. This CSS is desired in most cases.
   // use this property if you wish to overwrite the base CSS to your own CSS. This is most
   // useful if for example your template is not based off a document with 0 as body margin.
+  // if you specify %WRAPPER_SELECTOR% this will be substituted with the actual CSS query
+  // selector for the canvas wrapper (e.g. #wrapper or .gjs-wrapper)
   baseCss: `
     * {
       box-sizing: border-box;
     }
-    html, body, #wrapper {
+    html, body, %WRAPPER_SELECTOR% {
       min-height: 100%;
     }
     body {
@@ -46,7 +64,7 @@ module.exports = {
       height: 100%;
       background-color: #fff
     }
-    #wrapper {
+    %WRAPPER_SELECTOR% {
       overflow: auto;
       overflow-x: hidden;
     }
@@ -103,9 +121,14 @@ module.exports = {
   nativeDnD: 1,
 
   // Show the wrapper component in the final code, eg. in editor.getHtml()
+  // you probably want to enable this is `fromDocument` is true
+  // since the wrapper's (body's) attributes and classes may affect how the
+  // document is rendered
   exportWrapper: 0,
 
   // The wrapper, if visible, will be shown as a `<body>`
+  // you probably want to disable this if `fromDocument` is true
+  // since the wrapper is already a body element in this case
   wrappesIsBody: 1,
 
   // Usually when you update the `style` of the component this changes the

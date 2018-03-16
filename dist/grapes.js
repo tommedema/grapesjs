@@ -4403,6 +4403,7 @@ var Component = Backbone.Model.extend(_Styleable2.default).extend({
       var propOrig = this.getStyle();
       this.rule = cc.setIdRule(this.getId(), prop, _extends({}, opts, { state: state }));
       var diff = (0, _mixins.shallowDiff)(propOrig, prop);
+      this.set('style', {});
       (0, _underscore.keys)(diff).forEach(function (pr) {
         return _this3.trigger('change:style:' + pr);
       });
@@ -4768,10 +4769,15 @@ var Component = Backbone.Model.extend(_Styleable2.default).extend({
     var attributes = this.getAttrToHTML();
 
     for (var attr in attributes) {
-      var value = attributes[attr];
+      var val = attributes[attr];
+      var value = (0, _underscore.isString)(val) ? val.replace(/"/g, '&quot;') : val;
 
       if (!(0, _underscore.isUndefined)(value)) {
-        attrs.push(attr + '="' + value + '"');
+        if ((0, _underscore.isBoolean)(value)) {
+          value && attrs.push(attr);
+        } else {
+          attrs.push(attr + '="' + value + '"');
+        }
       }
     }
 
@@ -17739,12 +17745,14 @@ module.exports = {
     var u = 'px';
     bStyle.display = 'block';
     var canvasPos = canvas.getCanvasView().getPosition();
-    var badgeH = badge ? badge.offsetHeight : 0;
-    var badgeW = badge ? badge.offsetWidth : 0;
-    var top = pos.top - badgeH < canvasPos.top ? canvasPos.top : pos.top - badgeH;
-    var left = pos.left + badgeW < canvasPos.left ? canvasPos.left : pos.left;
-    bStyle.top = top + u;
-    bStyle.left = left + u;
+    if (canvasPos) {
+      var badgeH = badge ? badge.offsetHeight : 0;
+      var badgeW = badge ? badge.offsetWidth : 0;
+      var top = pos.top - badgeH < canvasPos.top ? canvasPos.top : pos.top - badgeH;
+      var left = pos.left + badgeW < canvasPos.left ? canvasPos.left : pos.left;
+      bStyle.top = top + u;
+      bStyle.left = left + u;
+    }
   },
 
 
@@ -17966,10 +17974,12 @@ module.exports = {
       elPos: elPos,
       event: 'toolbarPosUpdate'
     });
-    var leftPos = pos.left + pos.elementWidth - pos.targetWidth;
-    toolbarStyle.top = pos.top + unit;
-    toolbarStyle.left = (leftPos < 0 ? 0 : leftPos) + unit;
-    toolbarStyle.display = origDisp;
+    if (pos) {
+      var leftPos = pos.left + pos.elementWidth - pos.targetWidth;
+      toolbarStyle.top = pos.top + unit;
+      toolbarStyle.left = (leftPos < 0 ? 0 : leftPos) + unit;
+      toolbarStyle.display = origDisp;
+    }
   },
 
 
@@ -18759,6 +18769,7 @@ module.exports = function (config) {
 
       for (var i = 0, len = nodes.length; i < len; i++) {
         var node = nodes[i];
+
         var attrs = node.attributes || [];
         var attrsLen = attrs.length;
         var nodePrev = result[result.length - 1];
@@ -18801,6 +18812,12 @@ module.exports = function (config) {
             model.classes = this.parseClass(nodeValue);
           } else if (nodeName == 'contenteditable') {
             continue;
+          } else if (nodeName === 'data-gjs-from-doc') {
+            // Persist data-gjs-from-doc atributes as usual, such that
+            // they can still be retrieved from the DOM. This is useful to
+            // remove elements that should be ignored when `fromDocument` is true
+            //  based on the data-gjs-from-doc attribute.
+            model.attributes[nodeName] = nodeValue;
           } else if (nodeName.indexOf(modelAttrStart) === 0) {
             var modelAttr = nodeName.replace(modelAttrStart, '');
             var valueLen = nodeValue.length;
@@ -21952,24 +21969,6 @@ module.exports = Backbone.View.extend({
           videoNode.src = fileURL
           */
 
-          /*
-          // Show local video files, http://jsfiddle.net/dsbonev/cCCZ2/embedded/result,js,html,css/
-          var URL = window.URL || window.webkitURL
-          var file = this.files[0]
-           var type = file.type
-           var videoNode = document.createElement('video');
-           var canPlay = videoNode.canPlayType(type) // can use also for 'audio' types
-           if (canPlay === '') canPlay = 'no'
-           var message = 'Can play type "' + type + '": ' + canPlay
-           var isError = canPlay === 'no'
-           displayMessage(message, isError)
-            if (isError) {
-             return
-           }
-            var fileURL = URL.createObjectURL(file)
-           videoNode.src = fileURL
-          */
-
           // If it's an image, try to find its size
           if (type === 'image') {
             var data = {
@@ -22572,18 +22571,20 @@ module.exports = Backbone.View.extend({
 
   /**
    * Add to collection
-   * @param  {Object} Model
-   *
-   * @return  void
+   * @param {Model} model
+   * @param {Collection} coll
+   * @param {Object} opts
    * @private
    * */
   addTo: function addTo(model) {
+    var coll = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var opts = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
     var em = this.config.em;
     var i = this.collection.indexOf(model);
     this.addToCollection(model, null, i);
 
-    if (em && !model.opt.temporary) {
-      em.trigger('add:component', model); // @deprecated
+    if (em && !opts.temporary) {
       em.trigger('component:add', model);
     }
   },
@@ -23689,7 +23690,7 @@ module.exports = function () {
     plugins: plugins,
 
     // Will be replaced on build
-    version: '0.14.5',
+    version: '0.14.6',
 
     /**
      * Initializes an editor based on passed options
@@ -23709,7 +23710,8 @@ module.exports = function () {
     init: function init() {
       var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-      var els = config.container;
+      var els = config.fromDocument ? window.document.body : config.container;
+
       if (!els) throw new Error("'container' is required");
       config = _extends({}, defaultConfig, config);
       config.el = (0, _underscore.isElement)(els) ? els : document.querySelector(els);
@@ -24354,6 +24356,8 @@ module.exports = function (config) {
     * @param {string|Array<Object>} [config.components=''] HTML string or object of components
     * @param {string|Array<Object>} [config.style=''] CSS string or object of rules
     * @param {Boolean} [config.fromElement=false] If true, will fetch HTML and CSS from selected container
+    * @param {Boolean} [config.fromDocument=false] If true, will fetch the entire document incl. doctype, html, and body elements
+    * @param {string} [config.fromDocumentParentTemplate] If `fromDocument` is true, will use this template for the editor document
     * @param {Boolean} [config.undoManager=true] Enable/Disable undo manager
     * @param {Boolean} [config.autorender=true] If true renders editor on init
     * @param {Boolean} [config.noticeOnUnload=true] Enable/Disable alert message before unload the page
@@ -24396,6 +24400,16 @@ module.exports = {
   // If true, will fetch HTML and CSS from selected container
   fromElement: 0,
 
+  // If true, will fetch the entire document (including doctype, html, head, and body tags)
+  // and inject it into the canvas iframe. This improves compatibility with complex templates
+  // that rely on doctypes and above-body classes to render properly.
+  fromDocument: 0,
+
+  // If `fromDocument` is true, the canvas iframe's document will be transposed with
+  // the main document. The main document containing the canvas iframe will then be reset to
+  // a clean state using this document template. Do not include `<html></html>` tags.
+  fromDocumentParentTemplate: '\n    <head>\n      <meta charset="utf-8">\n      <title></title>\n    </head>\n    <body></body>\n  ',
+
   // Show an alert before unload the page with unsaved changes
   noticeOnUnload: true,
 
@@ -24414,6 +24428,14 @@ module.exports = {
 
   // Width for the editor container
   width: '100%',
+
+  // By default Grapes injects base CSS into the canvas. For example, it sets body margin to 0
+  // and sets a default background color of white. This CSS is desired in most cases.
+  // use this property if you wish to overwrite the base CSS to your own CSS. This is most
+  // useful if for example your template is not based off a document with 0 as body margin.
+  // if you specify %WRAPPER_SELECTOR% this will be substituted with the actual CSS query
+  // selector for the canvas wrapper (e.g. #wrapper or .gjs-wrapper)
+  baseCss: '\n    * {\n      box-sizing: border-box;\n    }\n    html, body, %WRAPPER_SELECTOR% {\n      min-height: 100%;\n    }\n    body {\n      margin: 0;\n      height: 100%;\n      background-color: #fff\n    }\n    %WRAPPER_SELECTOR% {\n      overflow: auto;\n      overflow-x: hidden;\n    }\n    \n    * ::-webkit-scrollbar-track {\n      background: rgba(0, 0, 0, 0.1)\n    }\n\n    * ::-webkit-scrollbar-thumb {\n      background: rgba(255, 255, 255, 0.2)\n    }\n\n    * ::-webkit-scrollbar {\n      width: 10px\n    }\n  ',
 
   // CSS that could only be seen (for instance, inside the code viewer)
   protectedCss: '* { box-sizing: border-box; } body {margin: 0;}',
@@ -24454,9 +24476,14 @@ module.exports = {
   nativeDnD: 1,
 
   // Show the wrapper component in the final code, eg. in editor.getHtml()
+  // you probably want to enable this is `fromDocument` is true
+  // since the wrapper's (body's) attributes and classes may affect how the
+  // document is rendered
   exportWrapper: 0,
 
   // The wrapper, if visible, will be shown as a `<body>`
+  // you probably want to disable this if `fromDocument` is true
+  // since the wrapper is already a body element in this case
   wrappesIsBody: 1,
 
   // Usually when you update the `style` of the component this changes the
@@ -24624,7 +24651,27 @@ module.exports = Backbone.Model.extend({
     this.set('modules', []);
     this.set('toLoad', []);
 
-    if (c.el && c.fromElement) this.config.components = c.el.innerHTML;
+    if (c.el && c.fromElement) {
+      // Retrieve the HTML from the given element
+      this.config.components = c.el.innerHTML;
+    } else if (c.el && c.fromDocument) {
+      // If `fromDocument` is true we will want to copy all elements that
+      // should not be ignored (flagged by data-gjs-from-doc)
+      var tree = $(c.el).clone(true, true);
+      tree.find('[data-gjs-from-doc]').remove();
+
+      // Retrieve the HTML from the given element
+      this.config.components = tree.get(0).innerHTML;
+
+      // Cleanup
+      tree.remove();
+
+      // If `fromDocument` is true we will also want to parse style tags from the
+      // head of the document
+      this.config.components = $(window.document.head).find('style:not([data-gjs-from-doc])').get().reduce(function (s, e) {
+        return s + e.outerHTML + '\n';
+      }, '') + this.config.components;
+    }
 
     // Load modules
     deps.forEach(function (name) {
@@ -24951,8 +24998,8 @@ module.exports = Backbone.Model.extend({
       }
     });
 
-    sm.store(store, function () {
-      clb && clb();
+    sm.store(store, function (res) {
+      clb && clb(res);
       _this4.set('changesCount', 0);
       _this4.trigger('storage:store', store);
     });
@@ -26125,6 +26172,7 @@ module.exports = Backbone.View.extend({
 
       if (!dropContent) {
         // Putting `avoidStore` here will make the UndoManager behave wrong
+        opts.temporary = 1;
         modelTemp = targetCollection.add({}, _extends({}, opts));
 
         if (model) {
@@ -36381,16 +36429,18 @@ module.exports = function () {
         event: 'rteToolbarPosUpdate'
       });
 
-      if (config.adjustToolbar) {
-        // Move the toolbar down when the top canvas edge is reached
-        if (pos.top <= pos.canvasTop) {
-          pos.top = pos.elementTop + pos.elementHeight;
+      if (pos) {
+        if (config.adjustToolbar) {
+          // Move the toolbar down when the top canvas edge is reached
+          if (pos.top <= pos.canvasTop) {
+            pos.top = pos.elementTop + pos.elementHeight;
+          }
         }
-      }
 
-      var toolbarStyle = toolbar.style;
-      toolbarStyle.top = pos.top + un;
-      toolbarStyle.left = pos.left + un;
+        var toolbarStyle = toolbar.style;
+        toolbarStyle.top = pos.top + un;
+        toolbarStyle.left = pos.left + un;
+      }
     },
 
 
@@ -41942,7 +41992,10 @@ module.exports = {
   labelPlhHref: 'eg. https://google.com',
 
   // Default options for the target input
-  optionsTarget: [{ value: '', name: 'This window' }, { value: '_blank', name: 'New window' }]
+  optionsTarget: [{ value: '', name: 'This window' }, { value: '_blank', name: 'New window' }],
+
+  // Text to show in case no element selected
+  textNoElement: 'Select an element before using Trait Manager'
 };
 
 /***/ }),
@@ -42234,6 +42287,8 @@ module.exports = TraitView.extend({
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 /**
  *
  * * [getWrapper](#getwrapper)
@@ -42359,7 +42414,6 @@ module.exports = function () {
     /**
      * Returns config
      * @return {Object} Config object
-     * @private
      */
     getConfig: function getConfig() {
       return c;
@@ -42415,6 +42469,11 @@ module.exports = function () {
       wrapper['custom-name'] = c.wrapperName;
       wrapper.wrapper = 1;
 
+      // If the canvas is created from the document then use the same tag
+      if (em.config.fromDocument) {
+        wrapper.tagName = em.config.el.tagName.toLowerCase();
+      }
+
       // Components might be a wrapper
       if (components && components.constructor === Object && components.wrapper) {
         wrapper = _extends({}, components);
@@ -42433,7 +42492,22 @@ module.exports = function () {
         config: c,
         componentTypes: componentTypes
       });
-      component.set({ attributes: { id: 'wrapper' } });
+
+      // copy the document body's properties if `fromDocument` is true
+      if (em && em.config.fromDocument) {
+        var attrs = [].concat(_toConsumableArray(em.config.el.attributes)).reduce(function (a, e) {
+          a[e.name] = e.value;
+          return a;
+        }, {});
+        component.addAttributes(attrs);
+      }
+
+      // make the wrapper identifiable through a class or id depending on config
+      if (c.wrapperClass) {
+        component.addClass(c.wrapperClass);
+      } else {
+        component.addAttributes({ id: c.wrapperId });
+      }
 
       componentView = new ComponentView({
         model: component,
@@ -42768,6 +42842,11 @@ module.exports = {
   stylePrefix: 'comp-',
 
   wrapperId: 'wrapper',
+
+  // Define this if you prefer to use classes instead of IDs to identify the wrapper
+  // this is useful if you want to reuse the document with `fromDocument: true`
+  // and want to avoid the original body / wrapper ID to be overwritten.
+  wrapperClass: null,
 
   wrapperName: 'Body',
 
@@ -44213,6 +44292,15 @@ module.exports = function () {
 
 
     /**
+     * Get wrapper
+     * @return {Object}	wrp Wrapper
+     * */
+    getWrapper: function getWrapper() {
+      return canvas.get('wrapper');
+    },
+
+
+    /**
      * Returns canvas element
      * @return {HTMLElement}
      */
@@ -44240,11 +44328,26 @@ module.exports = function () {
 
 
     /**
+     * Returns document element of the frame
+     * @return {HTMLElement}
+     */
+    getDocument: function getDocument() {
+      return CanvasView.frame.el.contentDocument;
+    },
+
+
+    /**
      * Returns body wrapper element of the frame
      * @return {HTMLElement}
      */
     getWrapperEl: function getWrapperEl() {
-      return this.getBody().querySelector('#wrapper');
+      var doc = this.getDocument();
+      var cmc = this.getWrapper().getConfig();
+      if (cmc.wrapperClass) {
+        return doc.getElementsByClassName(cmc.wrapperClass)[0];
+      } else {
+        return doc.getElementById(cmc.wrapperId);
+      }
     },
 
 
@@ -44334,7 +44437,9 @@ module.exports = function () {
      * Render canvas
      * */
     render: function render() {
-      return CanvasView.render().el;
+      var canvasDocumentTemplate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      return CanvasView.render(canvasDocumentTemplate).el;
     },
 
 
@@ -44405,6 +44510,7 @@ module.exports = function () {
     getTargetToElementDim: function getTargetToElementDim(target, element, options) {
       var opts = options || {};
       var canvasPos = CanvasView.getPosition();
+      if (!canvasPos) return;
       var pos = opts.elPos || CanvasView.getElementPos(element);
       var toRight = options.toRight || 0;
       var targetHeight = opts.targetHeight || target.offsetHeight;
@@ -44772,7 +44878,7 @@ module.exports = {
   rulers: false,
 
   /*
-   * Append external scripts in head of the iframe before renderBody content
+   * Append external scripts in head of the iframe before renderIframeDocument content
    * In this case, you have to add them manually later in the final HTML page
    * @example
    * scripts: [
@@ -44855,7 +44961,7 @@ var $ = Backbone.$;
 
 module.exports = Backbone.View.extend({
   initialize: function initialize(o) {
-    _.bindAll(this, 'renderBody', 'onFrameScroll', 'clearOff');
+    _.bindAll(this, 'cloneIframeDocument', 'renderIframeDocument', 'onFrameScroll', 'clearOff');
     (0, _mixins.on)(window, 'scroll resize', this.clearOff);
     this.config = o.config || {};
     this.em = this.config.em || {};
@@ -44897,19 +45003,22 @@ module.exports = Backbone.View.extend({
 
 
   /**
-   * Insert scripts into head, it will call renderBody after all scripts loaded or failed
+   * Insert scripts into head, it will call renderIframeDocument after all scripts loaded or failed
    * @private
    */
   renderScripts: function renderScripts() {
-    var frame = this.frame;
-    var that = this;
+    var _this = this;
 
-    frame.el.onload = function () {
-      var scripts = that.config.scripts.slice(0),
+    var onload = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+    var frame = this.frame;
+
+    var inject = function inject() {
+      var scripts = _this.config.scripts.slice(0),
           // clone
       counter = 0;
 
-      function appendScript(scripts) {
+      var appendScript = function appendScript(scripts) {
         if (scripts.length > 0) {
           var script = document.createElement('script');
           script.type = 'text/javascript';
@@ -44917,11 +45026,60 @@ module.exports = Backbone.View.extend({
           script.onerror = script.onload = appendScript.bind(null, scripts);
           frame.el.contentDocument.head.appendChild(script);
         } else {
-          that.renderBody();
+          _this.renderIframeDocument();
         }
-      }
+      };
       appendScript(scripts);
     };
+
+    if (onload) {
+      frame.el.onload = inject;
+    } else {
+      inject();
+    }
+  },
+
+
+  /**
+   * If `fromDocument` is true, clone the entire document's structure
+   * except for the body with the already parsed DOM components.
+   * This ensures that doctypes, favicons, classes, etc. in higher level components
+   * like the html tag are respected.
+   * @private
+   */
+  cloneIframeDocument: function cloneIframeDocument(canvasDocumentTemplate) {
+    var _this2 = this;
+
+    var fdoc = this.frame.el.contentDocument;
+
+    fdoc.open('text/html', 'replace');
+    if (this.frame.el.attributes.srcDoc) {
+      fdoc.write(this.frame.el.attributes.srcDoc.value);
+    }
+    fdoc.write(canvasDocumentTemplate);
+    fdoc.close();
+
+    var called = false;
+    var nextOnce = function nextOnce() {
+      if (called) return;
+      called = true;
+
+      $(fdoc).off('readystatechange', nextOnce);
+
+      if (_this2.config.scripts.length === 0) {
+        _this2.renderIframeDocument();
+      } else {
+        _this2.renderScripts(false); // will call renderIframeDocument later
+      }
+    };
+
+    // Setting frame.onload does not function after writing to the document
+    // Readystatechange is called as expected
+    if (fdoc.readyState === 'complete' || fdoc.readyState === 'interactive') {
+      nextOnce();
+    } else {
+      $(fdoc).on('readystatechange', nextOnce);
+    }
   },
 
 
@@ -44929,26 +45087,42 @@ module.exports = Backbone.View.extend({
    * Render inside frame's body
    * @private
    */
-  renderBody: function renderBody() {
+  renderIframeDocument: function renderIframeDocument() {
     var wrap = this.model.get('frame').get('wrapper');
-    var em = this.config.em;
     if (wrap) {
+      var mdoc = window.document;
+      var em = this.config.em;
       var ppfx = this.ppfx;
-      //var body = this.frame.$el.contents().find('body');
-      var body = $(this.frame.el.contentWindow.document.body);
       var cssc = em.get('CssComposer');
       var conf = em.get('Config');
       var confCanvas = this.config;
       var protCss = conf.protectedCss;
-      var externalStyles = '';
+      var fdoc = this.frame.el.contentDocument;
+      var $body = $(fdoc.body);
 
+      // If fromDocument is true, the wrapper equals the body
+      if (em.config.fromDocument) {
+        $body.remove();
+        $(fdoc.documentElement).append(wrap.render());
+        $body = $(fdoc.body);
+      } else {
+        $body.append(wrap.render());
+      }
+
+      var externalStyles = '';
       confCanvas.styles.forEach(function (style) {
         externalStyles += '<link rel="stylesheet" href="' + style + '"/>';
       });
 
       var colorWarn = '#ffca6f';
 
-      var baseCss = '\n        * {\n          box-sizing: border-box;\n        }\n        html, body, #wrapper {\n          min-height: 100%;\n        }\n        body {\n          margin: 0;\n          height: 100%;\n          background-color: #fff\n        }\n        #wrapper {\n          overflow: auto;\n          overflow-x: hidden;\n        }\n      ';
+      var cm = em.get('DomComponents');
+      var cmc = cm.getConfig();
+      var wrapperSelector = cmc.wrapperClass ? '.' + cmc.wrapperClass : '#' + cmc.wrapperId;
+
+      var baseCss = em.config.baseCss ? em.config.baseCss.replace('%WRAPPER_SELECTOR%', wrapperSelector) : '';
+
+      // I need all this styles to make the editor work properly
       // Remove `html { height: 100%;}` from the baseCss as it gives jumpings
       // effects (on ENTER) with RTE like CKEditor (maybe some bug there?!?)
       // With `body {height: auto;}` jumps in CKEditor are removed but in
@@ -44956,26 +45130,21 @@ module.exports = Backbone.View.extend({
       // `body {height: 100%;}`.
       // For the moment I give the priority to Firefox as it might be
       // CKEditor's issue
-
-      // I need all this styles to make the editor work properly
-      var frameCss = '\n        ' + baseCss + '\n\n        .' + ppfx + 'dashed *[data-highlightable] {\n          outline: 1px dashed rgba(170,170,170,0.7);\n          outline-offset: -2px;\n        }\n\n        .' + ppfx + 'comp-selected {\n          outline: 3px solid #3b97e3 !important;\n          outline-offset: -3px;\n        }\n\n        .' + ppfx + 'comp-selected-parent {\n          outline: 2px solid ' + colorWarn + ' !important\n        }\n\n        .' + ppfx + 'no-select {\n          user-select: none;\n          -webkit-user-select:none;\n          -moz-user-select: none;\n        }\n\n        .' + ppfx + 'freezed {\n          opacity: 0.5;\n          pointer-events: none;\n        }\n\n        .' + ppfx + 'no-pointer {\n          pointer-events: none;\n        }\n\n        .' + ppfx + 'plh-image {\n          background: #f5f5f5;\n          border: none;\n          height: 50px;\n          width: 50px;\n          display: block;\n          outline: 3px solid #ffca6f;\n          cursor: pointer;\n          outline-offset: -2px\n        }\n\n        .' + ppfx + 'grabbing {\n          cursor: grabbing;\n          cursor: -webkit-grabbing;\n        }\n\n        * ::-webkit-scrollbar-track {\n          background: rgba(0, 0, 0, 0.1)\n        }\n\n        * ::-webkit-scrollbar-thumb {\n          background: rgba(255, 255, 255, 0.2)\n        }\n\n        * ::-webkit-scrollbar {\n          width: 10px\n        }\n\n        ' + (conf.canvasCss || '') + '\n        ' + (protCss || '') + '\n      ';
+      var frameCss = '\n        ' + baseCss + '\n\n        .' + ppfx + 'dashed *[data-highlightable] {\n          outline: 1px dashed rgba(170,170,170,0.7);\n          outline-offset: -2px;\n        }\n\n        .' + ppfx + 'comp-selected {\n          outline: 3px solid #3b97e3 !important;\n          outline-offset: -3px;\n        }\n\n        .' + ppfx + 'comp-selected-parent {\n          outline: 2px solid ' + colorWarn + ' !important\n        }\n\n        .' + ppfx + 'no-select {\n          user-select: none;\n          -webkit-user-select:none;\n          -moz-user-select: none;\n        }\n\n        .' + ppfx + 'freezed {\n          opacity: 0.5;\n          pointer-events: none;\n        }\n\n        .' + ppfx + 'no-pointer {\n          pointer-events: none;\n        }\n\n        .' + ppfx + 'plh-image {\n          background: #f5f5f5;\n          border: none;\n          height: 50px;\n          width: 50px;\n          display: block;\n          outline: 3px solid #ffca6f;\n          cursor: pointer;\n          outline-offset: -2px\n        }\n\n        .' + ppfx + 'grabbing {\n          cursor: grabbing;\n          cursor: -webkit-grabbing;\n        }\n\n        ' + (conf.canvasCss || '') + '\n        ' + (protCss || '') + '\n      ';
 
       if (externalStyles) {
-        body.append(externalStyles);
+        $body.append(externalStyles);
       }
+      $body.append('<style>' + frameCss + '</style>');
+      $body.append(cssc.render());
+      $body.append(this.getJsContainer());
 
-      body.append('<style>' + frameCss + '</style>');
-      body.append(wrap.render()).append(cssc.render());
-      body.append(this.getJsContainer());
       em.trigger('loaded');
       this.frame.el.contentWindow.onscroll = this.onFrameScroll;
       this.frame.udpateOffset();
 
       // When the iframe is focused the event dispatcher is not the same so
       // I need to delegate all events to the parent document
-      var doc = document;
-      var fdoc = this.frame.el.contentDocument;
-
       // Unfortunately just creating `KeyboardEvent(e.type, e)` is not enough,
       // the keyCode/which will be always `0`. Even if it's an old/deprecated
       // property keymaster (and many others) still use it... using `defineProperty`
@@ -44998,7 +45167,7 @@ module.exports = Backbone.View.extend({
       }].forEach(function (obj) {
         return obj.event.split(' ').forEach(function (event) {
           fdoc.addEventListener(event, function (e) {
-            return doc.dispatchEvent(createCustomEvent(e, obj.class));
+            return mdoc.dispatchEvent(createCustomEvent(e, obj.class));
           });
         });
       });
@@ -45088,7 +45257,9 @@ module.exports = Backbone.View.extend({
    * @private
    */
   getPosition: function getPosition() {
-    var bEl = this.frame.el.contentDocument.body;
+    var doc = this.frame.el.contentDocument;
+    if (!doc) return;
+    var bEl = doc.body;
     var fo = this.getFrameOffset();
     var co = this.getCanvasOffset();
     return {
@@ -45116,8 +45287,12 @@ module.exports = Backbone.View.extend({
     // In editor, I make use of setTimeout as during the append process of elements
     // those will not be available immediatly, therefore 'item' variable
     var script = document.createElement('script');
-    script.innerText = '\n        setTimeout(function() {\n          var item = document.getElementById(\'' + id + '\');\n          if (!item) return;\n          (function(){\n            ' + model.getScriptString() + ';\n          }.bind(item))()\n        }, 1);';
-    view.scriptContainer.get(0).appendChild(script);
+    script.innerHTML = '\n        setTimeout(function() {\n          var item = document.getElementById(\'' + id + '\');\n          if (!item) return;\n          (function(){\n            ' + model.getScriptString() + ';\n          }.bind(item))()\n        }, 1);';
+    // #873
+    // Adding setTimeout will make js components work on init of the editor
+    setTimeout(function () {
+      return view.scriptContainer.get(0).appendChild(script);
+    }, 0);
   },
 
 
@@ -45132,16 +45307,24 @@ module.exports = Backbone.View.extend({
     return this.jsContainer;
   },
   render: function render() {
+    var canvasDocumentTemplate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
     this.wrapper = this.model.get('wrapper');
 
     if (this.wrapper && typeof this.wrapper.render == 'function') {
       this.model.get('frame').set('wrapper', this.wrapper);
+
       this.$el.append(this.frame.render().el);
       var frame = this.frame;
-      if (this.config.scripts.length === 0) {
-        frame.el.onload = this.renderBody;
+
+      if (this.em.config.fromDocument) {
+        frame.el.onload = this.cloneIframeDocument.bind(this, canvasDocumentTemplate);
       } else {
-        this.renderScripts(); // will call renderBody later
+        if (this.config.scripts.length === 0) {
+          frame.el.onload = this.renderIframeDocument;
+        } else {
+          this.renderScripts(); // will call renderIframeDocument later
+        }
       }
     }
     var ppfx = this.ppfx;
@@ -45158,6 +45341,7 @@ module.exports = Backbone.View.extend({
     this.fixedOffsetEl = el.querySelector('.' + ppfx + 'offset-fixed-v');
     this.toolsEl = toolsEl;
     this.el.className = this.className;
+
     return this;
   }
 });
@@ -45222,10 +45406,18 @@ module.exports = __webpack_require__(0).View.extend({
     this.$el.contents().find('body');
   },
   getWrapper: function getWrapper() {
-    return this.$el.contents().find('body > div');
+    return this.$el.contents().find(this.em.config.fromDocument ? 'body' : 'body > div');
   },
   render: function render() {
     this.$el.attr({ class: this.ppfx + 'frame' });
+
+    // If `fromDocument` is true, inherit the document's doctype prior to
+    // the iframe's document being loaded
+    var doctypeStr = new XMLSerializer().serializeToString(document.doctype);
+    if (this.em.config.fromDocument && window.document.doctype) {
+      this.$el.attr({ srcdoc: doctypeStr });
+    }
+
     return this;
   }
 });
@@ -46199,10 +46391,12 @@ module.exports = _.extend({}, CreateComponent, {
 
 module.exports = {
   run: function run(ed) {
-    ed.Canvas.getBody().className = this.ppfx + 'dashed';
+    var body = ed.Canvas.getBody();
+    body.className += ' ' + this.ppfx + 'dashed';
   },
   stop: function stop(ed) {
-    ed.Canvas.getBody().className = '';
+    var body = ed.Canvas.getBody();
+    body.className = body.className.replace(this.ppfx + 'dashed', '');
   }
 };
 
@@ -46323,33 +46517,64 @@ module.exports = {
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(Backbone) {
 
-var $ = Backbone.$;
+
+var $ = __webpack_require__(0).$;
 
 module.exports = {
   run: function run(editor, sender) {
+    this.sender = sender;
+
     var config = editor.Config;
     var pfx = config.stylePrefix;
     var tm = editor.TraitManager;
     var panelC;
-    if (!this.obj) {
+
+    if (!this.$cn) {
       var tmView = tm.getTraitsViewer();
       var confTm = tm.getConfig();
-      this.obj = $('<div></div>').append('<div class="' + pfx + 'traits-label">' + confTm.labelContainer + '</div>').get(0);
-      this.obj.appendChild(tmView.render().el);
+      this.$cn = $('<div></div>');
+      this.$cn2 = $('<div></div>');
+      this.$cn.append(this.$cn2);
+      this.$header = $('<div>').append('<div class="' + confTm.stylePrefix + 'header">' + confTm.textNoElement + '</div>');
+      this.$cn.append(this.$header);
+      this.$cn2.append('<div class="' + pfx + 'traits-label">' + confTm.labelContainer + '</div>');
+      this.$cn2.append(tmView.render().el);
       var panels = editor.Panels;
+
       if (!panels.getPanel('views-container')) panelC = panels.addPanel({ id: 'views-container' });else panelC = panels.getPanel('views-container');
-      panelC.set('appendContent', this.obj).trigger('change:appendContent');
+
+      panelC.set('appendContent', this.$cn.get(0)).trigger('change:appendContent');
+
+      this.target = editor.getModel();
+      this.listenTo(this.target, 'change:selectedComponent', this.toggleTm);
     }
 
-    this.obj.style.display = 'block';
+    this.toggleTm();
+  },
+
+
+  /**
+   * Toggle Trait Manager visibility
+   * @private
+   */
+  toggleTm: function toggleTm() {
+    var sender = this.sender;
+    if (sender && sender.get && !sender.get('active')) return;
+
+    if (this.target.get('selectedComponent')) {
+      this.$cn2.show();
+      this.$header.hide();
+    } else {
+      this.$cn2.hide();
+      this.$header.show();
+    }
   },
   stop: function stop() {
-    if (this.obj) this.obj.style.display = 'none';
+    this.$cn2 && this.$cn2.hide();
+    this.$header && this.$header.hide();
   }
 };
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
 /* 201 */
@@ -47418,6 +47643,7 @@ module.exports = Backbone.View.extend({
     var label = this.model.get('label');
     el.className += ' ' + className + ' ' + pfx + 'one-bg ' + pfx + 'four-color-h';
     el.innerHTML = '<div class="' + className + '-label">' + label + '</div>';
+    el.title = el.textContent.trim();
     (0, _mixins.hasDnd)(this.em) && el.setAttribute('draggable', true);
     return this;
   }
@@ -47851,15 +48077,61 @@ module.exports = Backbone.View.extend({
     var model = this.model;
     var el = this.$el;
     var conf = this.conf;
-    var contEl = $(conf.el || 'body ' + conf.container);
     var pfx = conf.stylePrefix;
     el.empty();
+
+    var canvasDocumentTemplate = null;
+    var contEl = $(conf.el || 'body ' + conf.container);
+
+    // If the entire document serves as the template, we need to tranpose the canvas with the doc
+    if (conf.fromDocument) {
+      // Create a template from the original document except for elements to be ignored
+      // and for the body because this is embedded from parsed components.
+      // <style> tags from the head should not be copied because these are parsed by the
+      // css parser and embedded into the document
+      var mdoc = window.document;
+      var tree = $(mdoc.documentElement).clone(true, true);
+      var fromDocElements = tree.find('[data-gjs-from-doc]').clone(true, true);
+      tree.find('[data-gjs-from-doc], body, head > style').remove();
+      canvasDocumentTemplate = tree.get(0).outerHTML;
+      tree.remove();
+
+      // now that the main document has been cloned it can be transposed with the iframe
+      // therefore the main document's template (i.e. the document containing the canvas)
+      // should be reset to a clean template
+      // first reset the main document's doctype to HTML5
+      var newDoctype = mdoc.implementation.createDocumentType('html', '', '');
+      if (mdoc.doctype) {
+        mdoc.doctype.parentNode.replaceChild(newDoctype, mdoc.doctype);
+      } else {
+        mdoc.insertBefore(newDoctype, mdoc.childNodes[0]);
+      }
+
+      // insert the parent document template
+      $(mdoc.documentElement).html(conf.fromDocumentParentTemplate);
+
+      // re-insert grapes related elements such as grapes css
+      // these elements have the `data-gjs-from-doc` attribute
+      if (fromDocElements.length > 0) {
+        $(mdoc.head).append(fromDocElements);
+      }
+
+      // cleanup the html element itself
+      Array.from(mdoc.documentElement.attributes).forEach(function (_ref) {
+        var name = _ref.name;
+
+        $(mdoc.documentElement).removeAttr(name);
+      });
+
+      contEl = $(mdoc.body);
+      conf.el = mdoc.body;
+    }
 
     if (conf.width) contEl.css('width', conf.width);
 
     if (conf.height) contEl.css('height', conf.height);
 
-    el.append(model.get('Canvas').render());
+    el.append(model.get('Canvas').render(canvasDocumentTemplate));
     el.append(this.pn.render());
     el.attr('class', pfx + 'editor ' + pfx + 'one-bg ' + pfx + 'two-color');
     contEl.addClass(pfx + 'editor-cont').empty().append(el);

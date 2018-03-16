@@ -133,6 +133,50 @@ var editor = grapesjs.init({
 });
 ```
 
+If you work with complex templates that depend on elements and attributes above the body (e.g. a doctype, or a html element with classes), or that depend on the hierarchical level of elements inside the body (e.g. due to n-th element CSS selectors), you can also use the entire document as your template using the `fromDocument` property:
+
+```html
+<!doctype html>
+<html class="myClass">
+  <head>
+    <!-- rest of your complicated template's head -->
+  </head>
+  <body class="someBodyClass">
+    <!-- rest of your complicated template's body -->
+    
+    <!-- inject grapes resource at the end of the document
+    the document will be transposed with the editor canvas
+    grapes-specific elements can be flagged with the
+    `data-gjs-from-doc` attribute such that they will not
+    be used as part of the template. -->
+    <link rel="stylesheet" href="dist/css/grapes.min.css" data-gjs-from-doc>
+    <script src="dist/grapes.min.js" data-gjs-from-doc></script>
+    <style data-gjs-from-doc>
+      body,
+      html {
+        height: 100%;
+        margin: 0;
+      }
+    </style>
+    <script type="text/javascript" data-gjs-from-doc>
+      grapesjs.init({
+        fromDocument: true,
+        exportWrapper: 1,
+        wrappesIsBody: 0,
+        forceClass: 0,
+        avoidInline: 0,
+        protectedCss: '',
+        baseCss: '',
+        domComponents: {
+          wrapperClass: 'gjs-wrapper' // use class instead of ID to identify wrapper
+        }
+      });
+    </script>
+  </body>
+</html>
+```
+
+The above snippet should work with almost any static HTML website.
 
 ## Development
 

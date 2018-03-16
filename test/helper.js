@@ -2,11 +2,16 @@ import _ from 'underscore';
 import expect from 'expect';
 import sinon from 'sinon';
 import { JSDOM } from 'jsdom';
+import { XMLSerializer } from 'xmldom';
 
-const dom = new JSDOM('<!doctype html><html><body></body></html>', {
-  resources: 'usable'
-});
+const innerHTML = '<head></head><body></body>';
+const dom = new JSDOM(`<html>${innerHTML}</html>`);
 const window = dom.window;
+
+global.dom = dom;
+global.resetDom = () => {
+  dom.window.document.documentElement.innerHTML = innerHTML;
+};
 
 // Fix for the require of jquery
 var Module = require('module');
@@ -48,3 +53,7 @@ Object.keys(window).forEach(key => {
     global[key] = window[key];
   }
 });
+
+// polyfill XMLSerializer
+// see also https://github.com/jsdom/jsdom/issues/1368
+global.XMLSerializer = XMLSerializer;

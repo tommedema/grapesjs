@@ -6,6 +6,7 @@ describe('GrapesJS', () => {
     var fixtures;
     var fixture;
     var editorName;
+    var styleString;
     var htmlString;
     var config;
     var cssString;
@@ -30,7 +31,8 @@ describe('GrapesJS', () => {
     beforeEach(() => {
       htmlString = '<div class="test1"></div><div class="test2"></div>';
       cssString = '.test2{color:red}.test3{color:blue}';
-      documentEl = '<style>' + cssString + '</style>' + htmlString;
+      styleString = '<style>' + cssString + '</style>';
+      documentEl = styleString + htmlString;
       config = {
         container: '#' + editorName,
         storageManager: {
@@ -153,6 +155,100 @@ describe('GrapesJS', () => {
       expect(css ? css : '').toEqual(protCss + '.test2{color:red;}');
       // bust is still here
       expect(editor.getStyle().length).toEqual(2);
+    });
+
+    describe('Init editor from document', () => {
+      beforeEach(() => {
+        config.fromDocument = true;
+        delete config.container;
+      });
+
+      it("sets the canvas HTML to the document's html", () => {
+        fixtures.innerHTML = documentEl;
+        const editor = obj.init(config);
+        const html = editor.getHtml();
+        const css = editor.getCss({ avoidProtected: true });
+        expect(html).toEqual(`<div id="fixtures">${htmlString}</div>`);
+        expect(css).toEqual('.test2{color:red;}'); // .test3 is discarded in css
+      });
+
+      it("parses CSS from the document's head too", () => {
+        fixtures.innerHTML = htmlString;
+        $(document.head).append(styleString);
+        const editor = obj.init(config);
+        const html = editor.getHtml();
+        const css = editor.getCss({ avoidProtected: true });
+        expect(html).toEqual(`<div id="fixtures">${htmlString}</div>`);
+        expect(css).toEqual('.test2{color:red;}'); // .test3 is discarded in css
+      });
+
+      it('uses the parent documents HTML as the canvas template', () => {
+        const originalCharset = '<meta charset="ISO-8859-1">';
+        $(document.head).append(originalCharset);
+        fixtures.innerHTML = documentEl;
+        const editor = obj.init(config);
+        expect(window.frames[0].document.documentElement.outerHTML).toInclude(
+          originalCharset
+        );
+      });
+
+      it('sets the parent documents HTML to a clean template', () => {
+        config.fromDocumentParentTemplate = `
+          <head>
+            <meta charset="utf-8">
+            <title>clean</title>
+          </head>
+          <body></body>
+        `;
+        const originalCharset = '<meta charset="ISO-8859-1">';
+        $(document.head).append(originalCharset);
+        fixtures.innerHTML = documentEl;
+        const editor = obj.init(config);
+        const documentStr = dom.serialize();
+        expect(documentStr).toInclude('<!DOCTYPE html>');
+        expect(documentStr).toInclude('<meta charset="utf-8">');
+        expect(documentStr).toInclude('<title>clean</title>');
+        expect(documentStr).toNotInclude(originalCharset);
+      });
+
+      it.skip('should inherit the doctype from the parent template', () => {
+        // skipped because JSDOM does not seem to parse the doctypes of frame documents
+        // when these doctypes were set dynamically
+        // i.e. window.frames[0].document.doctype == undefined
+      });
+
+      it('does not use data-gjs-from-doc attributed elements for the template', () => {
+        $(document.head).append(
+          '<link rel="stylesheet" href="dist/css/grapes.min.css" data-gjs-from-doc>'
+        );
+        fixtures.innerHTML =
+          htmlString + '<div data-gjs-from-doc>ignore me</div>';
+        const editor = obj.init(config);
+        const fDocStr = window.frames[0].document.documentElement.outerHTML;
+        expect(fDocStr).toNotInclude('ignore me');
+        expect(fDocStr).toNotInclude('grapes.min.css');
+      });
+
+      it('persists data-gjs-from-doc attributed elements in main document', () => {
+        $(document.head).append(
+          '<link rel="stylesheet" href="dist/css/grapes.min.css" data-gjs-from-doc>'
+        );
+        fixtures.innerHTML =
+          htmlString + '<div data-gjs-from-doc>ignore me</div>';
+        const editor = obj.init(config);
+        const documentStr = dom.serialize();
+        expect(documentStr).toInclude('ignore me');
+        expect(documentStr).toInclude('grapes.min.css');
+      });
+    });
+
+    it('Respects wrapperClass configuration parameter', () => {
+      config.components = htmlString;
+      config.domComponents = { wrapperClass: 'test-wrapper' };
+      const editor = obj.init(config);
+      const fdoc = window.frames[0].document;
+      expect(fdoc.querySelector('#wrapper')).toNotExist();
+      expect(fdoc.querySelector('.test-wrapper')).toExist();
     });
 
     it('Set components as HTML', () => {

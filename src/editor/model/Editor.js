@@ -53,7 +53,31 @@ module.exports = Backbone.Model.extend({
     this.set('modules', []);
     this.set('toLoad', []);
 
-    if (c.el && c.fromElement) this.config.components = c.el.innerHTML;
+    if (c.el && c.fromElement) {
+      // Retrieve the HTML from the given element
+      this.config.components = c.el.innerHTML;
+    } else if (c.el && c.fromDocument) {
+      // If `fromDocument` is true we will want to copy all elements that
+      // should not be ignored (flagged by data-gjs-from-doc)
+      const tree = $(c.el).clone(true, true);
+      tree.find('[data-gjs-from-doc]').remove();
+
+      // Retrieve the HTML from the given element
+      this.config.components = tree.get(0).innerHTML;
+
+      // Cleanup
+      tree.remove();
+
+      // If `fromDocument` is true we will also want to parse style tags from the
+      // head of the document
+      this.config.components =
+        $(window.document.head)
+          .find('style:not([data-gjs-from-doc])')
+          .get()
+          .reduce((s, e) => {
+            return s + e.outerHTML + '\n';
+          }, '') + this.config.components;
+    }
 
     // Load modules
     deps.forEach(name => this.loadModule(name));
@@ -346,7 +370,7 @@ module.exports = Backbone.Model.extend({
       for (var el in obj) store[el] = obj[el];
     });
 
-    sm.store(store, (res) => {
+    sm.store(store, res => {
       clb && clb(res);
       this.set('changesCount', 0);
       this.trigger('storage:store', store);

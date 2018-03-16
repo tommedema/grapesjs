@@ -139,7 +139,6 @@ module.exports = () => {
     /**
      * Returns config
      * @return {Object} Config object
-     * @private
      */
     getConfig() {
       return c;
@@ -193,6 +192,11 @@ module.exports = () => {
       wrapper['custom-name'] = c.wrapperName;
       wrapper.wrapper = 1;
 
+      // If the canvas is created from the document then use the same tag
+      if (em.config.fromDocument) {
+        wrapper.tagName = em.config.el.tagName.toLowerCase();
+      }
+
       // Components might be a wrapper
       if (
         components &&
@@ -215,7 +219,22 @@ module.exports = () => {
         config: c,
         componentTypes
       });
-      component.set({ attributes: { id: 'wrapper' } });
+
+      // copy the document body's properties if `fromDocument` is true
+      if (em && em.config.fromDocument) {
+        const attrs = [...em.config.el.attributes].reduce((a, e) => {
+          a[e.name] = e.value;
+          return a;
+        }, {});
+        component.addAttributes(attrs);
+      }
+
+      // make the wrapper identifiable through a class or id depending on config
+      if (c.wrapperClass) {
+        component.addClass(c.wrapperClass);
+      } else {
+        component.addAttributes({ id: c.wrapperId });
+      }
 
       componentView = new ComponentView({
         model: component,

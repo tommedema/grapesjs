@@ -53,11 +53,21 @@ module.exports = require('backbone').View.extend({
   },
 
   getWrapper() {
-    return this.$el.contents().find('body > div');
+    return this.$el
+      .contents()
+      .find(this.em.config.fromDocument ? 'body' : 'body > div');
   },
 
   render() {
     this.$el.attr({ class: this.ppfx + 'frame' });
+
+    // If `fromDocument` is true, inherit the document's doctype prior to
+    // the iframe's document being loaded
+    const doctypeStr = new XMLSerializer().serializeToString(document.doctype);
+    if (this.em.config.fromDocument && window.document.doctype) {
+      this.$el.attr({ srcdoc: doctypeStr });
+    }
+
     return this;
   }
 });

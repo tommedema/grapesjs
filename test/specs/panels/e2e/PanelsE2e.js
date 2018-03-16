@@ -7,11 +7,9 @@ module.exports = {
       var config;
       var editorName = 'panel-fixture';
 
-      before(() => {
-        fixtures = $('<div id="#fixtures"></div>').appendTo('body');
-      });
-
       beforeEach(() => {
+        fixtures = $('<div id="#fixtures"></div>').appendTo('body');
+
         obj = grapesjs;
         config = {
           container: '#' + editorName,

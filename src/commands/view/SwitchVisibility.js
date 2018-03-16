@@ -1,9 +1,11 @@
 module.exports = {
   run(ed) {
-    ed.Canvas.getBody().className = this.ppfx + 'dashed';
+    const body = ed.Canvas.getBody();
+    body.className += ' ' + this.ppfx + 'dashed';
   },
 
   stop(ed) {
-    ed.Canvas.getBody().className = '';
+    const body = ed.Canvas.getBody();
+    body.className = body.className.replace(this.ppfx + 'dashed', '');
   }
 };
