@@ -7,8 +7,22 @@
 
 <p align="center"><img src="http://grapesjs.com/img/grapesjs-front-page-m.jpg" alt="GrapesJS" width="500" align="center"/></p>
 
-**Note**: this is a temporary fork of GrapesJS that will be probably be abandoned once the expose `baseCss` [PR](https://github.com/artf/grapesjs/pull/942) and subsequent `from-document` PR are both merged. For more information on the `from-document` feature, see below.
+## FromDocument Fork
 
+_Note: This is a temporary fork of GrapesJS that will probably be abandoned once the expose `baseCss` [PR](https://github.com/artf/grapesjs/pull/942) and subsequent `from-document` PR are both merged. For more information on the `from-document` feature, see below._
+
+Grapes' `container` and `fromElement` options work well for templates that are neatly contained below the body element. However, if your template relies on styling based on classes or attributes added to the html, head, or body tags, it will not be compatible. Similarly, if your CSS depends on a hierarchical structure within the body tag, it may not work with Grapes as grapes injects a custom wrapper div (thereby conflicting with n-th element CSS query selectors). Finally, templates render differently based on the doctype of your document. Doctype support is therefore necessary.
+
+The `fromDocument` feature resolves all of these issues, by allowing you to simply inject grapes into an existing document, no matter how complicated. Grapes will then transpose the document's content with the newly created iframe canvas, while respecting the document's doctype, and above-body elements (html, head). It will not duplicate grapes-specific elements as long as these elements are tagged with a special `gjs-from-doc` attribute (see the usage example below).
+
+_Without `fromDocument`_:
+...
+
+_With `fromDocument`_:
+...
+
+
+## Intro
 
 GrapesJS is a free and open source Web Builder Framework which helps building HTML templates, faster and easily, to be delivered in sites, newsletters or mobile apps. Mainly, GrapesJS was designed to be used inside a [CMS] to speed up the creation of dynamic templates. To better understand this concept check the image below
 
