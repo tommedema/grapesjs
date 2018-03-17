@@ -15,11 +15,13 @@ Grapes' `container` and `fromElement` options work well for templates that are n
 
 The `fromDocument` feature resolves all of these issues, by allowing you to simply inject grapes into an existing document, no matter how complicated. Grapes will then transpose the document's content with the newly created iframe canvas, while respecting the document's doctype, and above-body elements (html, head). It will not duplicate grapes-specific elements as long as these elements are tagged with a special `gjs-from-doc` attribute (see the usage example below).
 
+All tests pass and I've added additional tests as well for the new feauture.
+
 _Without `fromDocument`_:
-...
+<p align="center"><img src="https://img.ziggi.org/lFL3OA6n.png" alt="without fromDocument" height="400" align="center"/></p>
 
 _With `fromDocument`_:
-...
+<p align="center"><img src="https://img.ziggi.org/b3LatpzW.png" alt="without fromDocument" height="400" align="center"/></p>
 
 
 ## Intro
