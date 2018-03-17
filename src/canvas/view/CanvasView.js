@@ -165,7 +165,7 @@ module.exports = Backbone.View.extend({
         : '#' + cmc.wrapperId;
 
       const baseCss = em.config.baseCss
-        ? em.config.baseCss.replace('%WRAPPER_SELECTOR%', wrapperSelector)
+        ? em.config.baseCss.replace(/%WRAPPER_SELECTOR%/gi, wrapperSelector)
         : '';
 
       // I need all this styles to make the editor work properly
