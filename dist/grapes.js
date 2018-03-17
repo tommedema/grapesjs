@@ -23690,7 +23690,7 @@ module.exports = function () {
     plugins: plugins,
 
     // Will be replaced on build
-    version: '0.14.6',
+    version: '0.15.1',
 
     /**
      * Initializes an editor based on passed options
@@ -45120,7 +45120,7 @@ module.exports = Backbone.View.extend({
       var cmc = cm.getConfig();
       var wrapperSelector = cmc.wrapperClass ? '.' + cmc.wrapperClass : '#' + cmc.wrapperId;
 
-      var baseCss = em.config.baseCss ? em.config.baseCss.replace('%WRAPPER_SELECTOR%', wrapperSelector) : '';
+      var baseCss = em.config.baseCss ? em.config.baseCss.replace(/%WRAPPER_SELECTOR%/gi, wrapperSelector) : '';
 
       // I need all this styles to make the editor work properly
       // Remove `html { height: 100%;}` from the baseCss as it gives jumpings
