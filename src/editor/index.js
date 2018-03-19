@@ -70,7 +70,8 @@
  * @param {string|Array<Object>} [config.style=''] CSS string or object of rules
  * @param {Boolean} [config.fromElement=false] If true, will fetch HTML and CSS from selected container
  * @param {Boolean} [config.fromDocument=false] If true, will fetch the entire document incl. doctype, html, and body elements
- * @param {string} [config.fromDocumentParentTemplate] If `fromDocument` is true, will use this template for the editor document
+ * @param {string} [config.fromDocumentParentTemplate='...'] If `fromDocument` is true, will use this template for the editor document
+ * @param {string} [config.fromDocumentParentTitle='Editor'] If `fromDocument` is true, will be the title of the document containing the editor
  * @param {Boolean} [config.undoManager=true] Enable/Disable undo manager
  * @param {Boolean} [config.autorender=true] If true renders editor on init
  * @param {Boolean} [config.noticeOnUnload=true] Enable/Disable alert message before unload the page
