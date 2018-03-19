@@ -2,8 +2,8 @@
   "name": "@convertis/grapesjs-from-doc",
   "description": "Free and Open Source Web Builder Framework",
   "version": "0.0.1",
-  "authors": [
-    "Artur Arseniev",
+  "author": "Artur Arseniev",
+  "contributors": [
     "Tom Medema"
   ],
   "license": "BSD-3-Clause",
@@ -11,7 +11,7 @@
   "main": "dist/grapes.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tommedema/grapesjs.git"
+    "url": "git+https://github.com/tommedema/grapesjs.git"
   },
   "dependencies": {
     "backbone": "^1.3.3",
@@ -98,5 +98,11 @@
     "format": "prettier --single-quote --write './{src,test}/**/*.js'",
     "test": "cross-env NODE_PATH=./src mocha --compilers js:babel-core/register --require test/helper.js --timeout 10000 --recursive test/main.js",
     "test:dev": "npm test -- -R min -w"
+  },
+  "bugs": {
+    "url": "https://github.com/tommedema/grapesjs/issues"
+  },
+  "directories": {
+    "test": "test"
   }
 }
