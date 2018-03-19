@@ -52,6 +52,9 @@ module.exports = Backbone.View.extend({
 
       // insert the parent document template
       $(mdoc.documentElement).html(conf.fromDocumentParentTemplate);
+      if (conf.fromDocumentParentTitle) {
+        mdoc.title = conf.fromDocumentParentTitle;
+      }
 
       // re-insert grapes related elements such as grapes css
       // these elements have the `data-gjs-from-doc` attribute
