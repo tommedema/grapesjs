@@ -200,6 +200,7 @@ describe('GrapesJS', () => {
           </head>
           <body></body>
         `;
+        config.fromDocumentParentTitle = null;
         const originalCharset = '<meta charset="ISO-8859-1">';
         $(document.head).append(originalCharset);
         fixtures.innerHTML = documentEl;
