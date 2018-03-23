@@ -23690,7 +23690,7 @@ module.exports = function () {
     plugins: plugins,
 
     // Will be replaced on build
-    version: '0.15.1',
+    version: '0.0.5',
 
     /**
      * Initializes an editor based on passed options
@@ -24357,7 +24357,8 @@ module.exports = function (config) {
     * @param {string|Array<Object>} [config.style=''] CSS string or object of rules
     * @param {Boolean} [config.fromElement=false] If true, will fetch HTML and CSS from selected container
     * @param {Boolean} [config.fromDocument=false] If true, will fetch the entire document incl. doctype, html, and body elements
-    * @param {string} [config.fromDocumentParentTemplate] If `fromDocument` is true, will use this template for the editor document
+    * @param {string} [config.fromDocumentParentTemplate='...'] If `fromDocument` is true, will use this template for the editor document
+    * @param {string} [config.fromDocumentParentTitle='Editor'] If `fromDocument` is true, will be the title of the document containing the editor
     * @param {Boolean} [config.undoManager=true] Enable/Disable undo manager
     * @param {Boolean} [config.autorender=true] If true renders editor on init
     * @param {Boolean} [config.noticeOnUnload=true] Enable/Disable alert message before unload the page
@@ -24408,7 +24409,11 @@ module.exports = {
   // If `fromDocument` is true, the canvas iframe's document will be transposed with
   // the main document. The main document containing the canvas iframe will then be reset to
   // a clean state using this document template. Do not include `<html></html>` tags.
-  fromDocumentParentTemplate: '\n    <head>\n      <meta charset="utf-8">\n      <title></title>\n    </head>\n    <body></body>\n  ',
+  fromDocumentParentTemplate: '\n    <head>\n      <meta charset="utf-8">\n      <meta name="viewport" content="width=device-width, initial-scale=1.0">\n      <meta http-equiv="X-UA-Compatible" content="ie=edge">\n      <title></title>\n      <style data-gjs-from-doc>\n      body,\n      html {\n          height: 100%;\n          margin: 0;\n      }\n      </style>\n    </head>\n    <body></body>\n  ',
+
+  // If `fromDocument` is true, the string given here will be used as the title of
+  // the document containing the editor.
+  fromDocumentParentTitle: 'Editor',
 
   // Show an alert before unload the page with unsaved changes
   noticeOnUnload: true,
@@ -46392,11 +46397,11 @@ module.exports = _.extend({}, CreateComponent, {
 module.exports = {
   run: function run(ed) {
     var body = ed.Canvas.getBody();
-    body.className += ' ' + this.ppfx + 'dashed';
+    body.classList.add(this.ppfx + 'dashed');
   },
   stop: function stop(ed) {
     var body = ed.Canvas.getBody();
-    body.className = body.className.replace(this.ppfx + 'dashed', '');
+    body.classList.remove(this.ppfx + 'dashed');
   }
 };
 
@@ -48109,6 +48114,9 @@ module.exports = Backbone.View.extend({
 
       // insert the parent document template
       $(mdoc.documentElement).html(conf.fromDocumentParentTemplate);
+      if (conf.fromDocumentParentTitle) {
+        mdoc.title = conf.fromDocumentParentTitle;
+      }
 
       // re-insert grapes related elements such as grapes css
       // these elements have the `data-gjs-from-doc` attribute
